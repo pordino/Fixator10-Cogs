@@ -128,6 +128,12 @@ class UnmuteError:
     not_text = "not text"
     not_muted = "not muted"
 
+class MuteError:
+    forbidden = "forbidden"
+    failed_to_mute = "failed to unmute"
+    not_text = "not text"
+    already_muted = "already_muted"
+
 
 class Restricts:
     """Moderation tools."""
@@ -548,37 +554,24 @@ class Restricts:
     @mute.command(name="channel", pass_context=True, no_pm=True)
     async def channel_mute(self, ctx, user: discord.Member, *, reason: str = None):
         """Mutes user in the current channel"""
-        author = ctx.message.author
-        channel = ctx.message.channel
-        server = ctx.message.server
-        overwrites = channel.overwrites_for(user)
-
-        if overwrites.send_messages is False:
+        parsedDuration = self.duration_from_text(reason)
+        error = await self.channel_mute_impl(ctx, ctx.message.channel, user, reason, parsedDuration)
+        if error == MuteError.already_muted:
             await self.bot_say(ctx, "That user can not can't send messages in this "
                                     "channel (already muted?)")
-            return
-        elif not self.is_allowed_by_hierarchy(server, author, user):
+        elif error == MuteError.forbidden:
             await self.bot_say(ctx, "I cannot let you do that. You are "
                                     "not higher than the user in the role "
                                     "hierarchy.")
-            return
-
-        overwrites.send_messages = False
-        try:
-            await self.bot.edit_channel_permissions(channel, user, overwrites)
-        except discord.Forbidden:
+        elif error == MuteError.failed_to_unmute:
             await self.bot_say(ctx, "Failed to mute user. I need the manage roles "
                                     "permission and the user I'm muting must be "
                                     "lower than myself in the role hierarchy.")
-        else:
-            parsedDuration = self.duration_from_text(reason)
-            if parsedDuration:
-                await self.on_muted(UnmuteInfo(ctx, ctx.message.channel, user, parsedDuration))
-            else:
-                await self.bot_say(ctx, "Can not parse duration. "
-                                        "Will mute without timer. "
-                                        "To use mute with timer please try again with a correct duration format.")
 
+        elif error == MuteError.not_text:
+            await self.bot_say(ctx, "please try to mute only in text channels")
+
+        else:
             await self.new_case(server,
                                 action="CMUTE",
                                 channel=channel,
@@ -590,12 +583,41 @@ class Restricts:
             else:
                 await self.bot_say(ctx, "User has been muted in this channel without timeout.")
 
+     async def channel_mute_impl(self, ctx, channel, user: discord.Member, reason, duration):
+        """Unmutes user in the current channel"""
+        author = ctx.message.author
+        server = ctx.message.server
+        overwrites = channel.overwrites_for(user)
+        error = ""
+
+        if channel.type != discord.ChannelType.text:
+            return MuteError.not_text
+
+        elif overwrites.send_messages is False:
+            return MuteError.already_muted
+        
+        elif not self.is_allowed_by_hierarchy(server, author, user):
+            return MuteError.forbidden
+        
+        overwrites.send_messages = False
+
+        try:
+            await self.bot.edit_channel_permissions(channel, user,
+                                                        overwrites)
+        except discord.Forbidden:
+            return MuteError.failed_to_mute
+        else:
+            if duration:
+                await self.on_muted(UnmuteInfo(ctx, ctx.message.channel, user, duration))
+        return error
+
     @checks.mod_or_permissions(administrator=True)
     @mute.command(name="server", pass_context=True, no_pm=True)
     async def server_mute(self, ctx, user: discord.Member, *, reason: str = None):
         """Mutes user in the server"""
         author = ctx.message.author
         server = ctx.message.server
+        parsedDuration = self.duration_from_text(reason)
 
         await self.bot_say(ctx, "Starting server mute, please wait")
 
@@ -604,37 +626,20 @@ class Restricts:
                                     "not higher than the user in the role "
                                     "hierarchy.")
             return
-        parsedDuration = self.duration_from_text(reason)
-        if not parsedDuration:
-            await self.bot_say(ctx, "Can not parse duration. "
-                                    "Will mute without timer. "
-                                    "To use mute with timer please try again with a correct duration format.")
-
-        register = {}
+    
+        register = set()
         muted = set()
         for channel in server.channels:
-            if channel.type != discord.ChannelType.text:
-                continue
-            overwrites = channel.overwrites_for(user)
-            if overwrites.send_messages is False:
-                continue
-            register[channel.id] = overwrites.send_messages
-            overwrites.send_messages = False
-            try:
-                await self.bot.edit_channel_permissions(channel, user,
+            error = self.channel_mute_impl(ctx, channel, user, reason, parsedDuration)
                                                         overwrites)
-            except discord.Forbidden:
+            if error == MuteError.failed_to_mute:
                 await self.bot_say(ctx, "Failed to mute user. I need the manage roles "
                                         "permission and the user I'm muting must be "
                                         "lower than myself in the role hierarchy.")
                 return
             else:
-                if parsedDuration:
-                    muted.add(UnmuteInfo(ctx, channel, user, parsedDuration))
+                register.add(channel.id)
                 await asyncio.sleep(0.1)
-        for info in muted:
-            info.start_time = time.time()
-            await self.on_muted(info)
 
         if not register:
             await self.bot_say(ctx, "That user is already muted in all channels.")
@@ -729,10 +734,10 @@ class Restricts:
 
         for channel in server.channels:
             error = await self.channel_unmute_impl(ctx, channel, user)
-            if error == UnmuteError.forbidden:
+            if error == UnmuteError.failed_to_unmute:
                 await self.bot_say(ctx, "Failed to unmute user. I need the manage roles"
                                         " permission and the user I'm unmuting must be "
-                                        "lower than myself in the role hierarchy.")
+                                        " lower than myself in the role hierarchy.")
                 return
             else:
                 await asyncio.sleep(0.1)
