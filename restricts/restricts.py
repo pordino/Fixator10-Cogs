@@ -152,6 +152,9 @@ class Restricts:
         self.temp_cache = TempCache(bot)
         # cache to store information about unmute
         self.to_unmute = set()
+        to_unmute = dataIO.load_json("data/mod/perms_cache.json")
+        for item in to_unmute:
+            self.to_unmute.add(item)
         self.mutex = Lock()
 
     @commands.group(pass_context=True, no_pm=True)
@@ -1836,29 +1839,32 @@ class Restricts:
 
     async def on_muted(self, info: UnmuteInfo):
         if self.mutex.locked():
-            # print("mutex already locked: on_muted")
+            print("mutex already locked: on_muted")
             traceback.print_exc()
 
         self.mutex.acquire()
         try:
             # remove the last user info with it fucking caches
             self.to_unmute.remove(info)
-        except KeyError:
+            dataIO.save_json("data/mod/perms_cache.json", self.to_unmute)
+        except Exception:
             pass
         finally:
             # add new user info with it fucking caches
             self.to_unmute.add(info)
+
             self.mutex.release()
 
     async def on_unmuted(self, info: UnmuteInfo):
         if self.mutex.locked():
-            # print("mutex already locked: on_unmuted")
+            print("mutex already locked: on_unmuted")
             traceback.print_exc()
 
         self.mutex.acquire()
         try:
             self.to_unmute.remove(info)
-        except KeyError:
+            dataIO.save_json("data/mod/perms_cache.json", self.to_unmute)
+        except Exception:
             pass
         finally:
             self.mutex.release()
