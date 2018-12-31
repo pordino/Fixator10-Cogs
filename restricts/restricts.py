@@ -600,6 +600,7 @@ class Restricts:
             return MuteError.forbidden
         
         overwrites.send_messages = False
+        overwrites.add_reactions = False
 
         try:
             await self.bot.edit_channel_permissions(channel, user,
@@ -704,6 +705,7 @@ class Restricts:
             return UnmuteError.forbidden
 
         overwrites.send_messages = None
+        overwrites.add_reactions = None
         is_empty = self.are_overwrites_empty(overwrites)
         try:
             if not is_empty:
