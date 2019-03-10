@@ -1,52 +1,32 @@
 import math
 import operator
 import os
+from PIL import Image, ImageDraw, ImageFont, ImageColor, ImageOps, ImageFilter
 import platform
+from pymongo import MongoClient
 import random
 import re
+import scipy
+import scipy.misc
+import scipy.cluster
 import string
 import textwrap
+import time
 from asyncio import TimeoutError
 from pathlib import Path
 
 import aiohttp
 import discord
 from discord.utils import find
-from fontTools.ttLib import TTFont
-from redbot.core import bank
-from redbot.core import checks
-from redbot.core import commands
+from redbot.core import bank, checks, commands, Config
 from redbot.core.data_manager import bundled_data_path, cog_data_path
 from redbot.core.utils.chat_formatting import pagify, box
 from redbot.core.utils.data_converter import DataConverter as dc
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
-try:
-    import pymongo
-    from pymongo import MongoClient
-except:
-    raise RuntimeError("Can't load pymongo. Do 'pip3 install pymongo'.")
-try:
-    import scipy
-    import scipy.misc
-    import scipy.cluster
-except:
-    pass
-try:
-    from PIL import Image, ImageDraw, ImageFont, ImageColor, ImageOps, ImageFilter
-except:
-    raise RuntimeError("Can't load pillow. Do 'pip3 install pillow'.")
-import time
-
-from redbot.core import Config
-
-
-try:
-    client = MongoClient()
-    db = client['leveler']
-except:
-    print("Can't load database. Follow instructions on Git/online to install MongoDB.")
+client = MongoClient()
+db = client['leveler']
 
 async def non_global_bank(ctx):
     return not await bank.is_global()
@@ -2683,8 +2663,6 @@ class Leveler(commands.Cog):
         result.save(filename,'PNG', quality=100)
 
     async def _handle_on_message(self, message):
-        # log.debug("leveler_test_original")
-        # try:
         text = message.content
         channel = message.channel
         server = message.guild
@@ -2757,25 +2735,10 @@ class Leveler(commands.Cog):
                 name = "You"
 
             new_level = str(userinfo["servers"][str(server.id)]["level"])
-            # add to appropriate role if necessary
-            # try:
             server_roles = db.roles.find_one({'server_id': str(server.id)})
             if server_roles is not None:
                 for role in server_roles['roles'].keys():
                     if int(server_roles['roles'][role]['level']) == int(new_level):
-                        # role_obj = discord.utils.find(lambda r: r.name == role, server.roles)
-
-                        # new_roles = discord.utils._unique(
-                        # role.id for role in itertools.chain(user.roles, (role_obj,)))
-
-                        # if server_roles['roles'][role]['remove_role'] is not None:
-                        # remove_role_obj = discord.utils.find(
-                        # lambda r: r.name == server_roles['roles'][role]['remove_role'], server.roles)
-                        # if remove_role_obj is not None:
-                        # try:
-                        # new_roles.remove(remove_role_obj.id)
-                        # except ValueError:
-                        # pass
                         add_role = discord.utils.get(server.roles, name=role)
                         if add_role is not None:
                             try:
@@ -2793,9 +2756,6 @@ class Leveler(commands.Cog):
                             except discord.HTTPException:
                                 await channel.send("Levelup role removal failed")
                         # await user.edit(roles=new_roles, reason="Levelup")
-
-            # except Exception as e:
-            # await channel.send(f'Role was not set. Missing Permissions! {e}')
 
             # add appropriate badge if necessary
             try:
@@ -2954,7 +2914,7 @@ class Leveler(commands.Cog):
                     "servers.{}.level".format(server.id): 0,
                     "servers.{}.current_exp".format(server.id): 0,
                 }}, upsert=True)
-        except AttributeError as e:
+        except AttributeError:
             pass
 
     def _truncate_text(self, text, max_length):
