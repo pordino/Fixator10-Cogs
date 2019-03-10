@@ -5,6 +5,7 @@
   "install_msg": "Thanks for install.",
   "short": "Personal roles for members",
   "description": "Personal roles for members",
+  "hidden": true,
   "tags": [
     "myrole",
     "personal role",

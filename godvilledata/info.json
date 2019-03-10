@@ -5,6 +5,7 @@
   "install_msg": "Thanks for install.",
   "short": "Get data about Godville profiles",
   "description": "Get data about Godville profiles",
+  "hidden": true,
   "tags": [
     "godville",
     "ZPG"

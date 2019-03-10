@@ -6,6 +6,7 @@
   "install_msg": "Thanks for install.",
   "short": "Some (maybe) useful utils.",
   "description": "Some (maybe) useful utils.",
+  "hidden": true,
   "tags": [
     "utils",
     "time",

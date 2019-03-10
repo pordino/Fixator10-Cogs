@@ -5,6 +5,7 @@
   "install_msg": "Thanks for install.",
   "short": "This cog show minecraft-related data",
   "description": "This cog show minecraft-related data\nIncluding:\n  Player's nicks history\n  Get skin by nickname\n  Get status of minecraft data-servers",
+  "hidden": true,
   "tags": [
     "minecraft",
     "game"

@@ -5,6 +5,7 @@
   "install_msg": "Thanks for install.",
   "short": "Allow users to manage #general channel's name and topic",
   "description": "Allow users to manage #general channel's name and topic",
+  "hidden": true,
   "tags": [
     "#general",
     "channel",
