@@ -303,12 +303,12 @@ class Leveler(commands.Cog):
                 break
 
         msg = ""
-        msg += "Rank     Name                (Page {}/{})     \n\n".format(page, pages)
+        msg += "Rank     Name                   (Page {}/{})     \n\n".format(page, pages)
         rank = 1 + per_page * (page - 1)
         start_index = per_page * page - per_page
         end_index = per_page * page
 
-        default_label = "  "
+        default_label = "   "
         special_labels = ["♔", "♕", "♖", "♗", "♘", "♙"]
 
         for single_user in sorted_list[start_index:end_index]:
@@ -811,7 +811,7 @@ class Leveler(commands.Cog):
             if await self._process_purchase(ctx):
                 db.users.update_one({'user_id': str(user.id)},
                                     {'$set': {"levelup_background": backgrounds["levelup"][image_name]}})
-                await ctx.send("**Your new level-up background has been succesfully set!**")
+                await ctx.send("**Your new level-up background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset levelup color info auto`".format(ctx.prefix))
         else:
             await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds levelup`")
 
@@ -837,7 +837,7 @@ class Leveler(commands.Cog):
             if await self._process_purchase(ctx):
                 db.users.update_one({'user_id': str(user.id)},
                                     {'$set': {"profile_background": backgrounds["profile"][image_name]}})
-                await ctx.send("**Your new profile background has been succesfully set!**")
+                await ctx.send("**Your new profile background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset profile color all auto`".format(ctx.prefix))
         else:
             await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds profile`")
 
@@ -863,7 +863,7 @@ class Leveler(commands.Cog):
             if await self._process_purchase(ctx):
                 db.users.update_one({'user_id': str(user.id)},
                                     {'$set': {"rank_background": backgrounds["rank"][image_name]}})
-                await ctx.send("**Your new rank background has been succesfully set!**")
+                await ctx.send("**Your new rank background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset rank color all auto`".format(ctx.prefix))
         else:
             await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds rank`")
 
@@ -919,10 +919,6 @@ class Leveler(commands.Cog):
                 ("badge_type",): v2data["badge_type"],
             }}
 
-            for guild in v2data["mention"]:
-                yield {(Config.GUILD, guild): {
-                    ("mentions",): True
-                }}			
             for guild in v2data["disabled_servers"]:
                 yield {(Config.GUILD, guild): {
                     ("disabled",): True
@@ -1608,15 +1604,12 @@ class Leveler(commands.Cog):
         elif badge_name not in userinfo["badges"]:
             await ctx.send("**{} does not have that badge!**".format(await self._is_mention(user)))
         else:
-            if userinfo['badges'][badge_name]['price'] == -1:
-                del userinfo["badges"][badge_name]
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
-                await ctx.send(
-                    "**{} has taken the `{}` badge from {}! :upside_down:**".format(await self._is_mention(org_user),
-                                                                                    name,
-                                                                                    await self._is_mention(user)))
-            else:
-                await ctx.send("**You can't take away purchasable badges!**")
+            del userinfo["badges"][badge_name]
+            db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
+            await ctx.send(
+                "**{} has taken the `{}` badge from {}! :upside_down:**".format(await self._is_mention(org_user),
+                                                                                name,
+                                                                                await self._is_mention(user)))
 
     @checks.mod_or_permissions(manage_roles=True)
     @badge.command(name='link')
@@ -1864,36 +1857,36 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def delprofilebg(self, ctx, name: str):
         """Delete a profile background."""
-        bgs = await self.config.backgrounds()
-        if name in bgs["profile"].keys():
-            await self.config.clear_raw("backgrounds", "profile", name)
-            await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
-        else:
-            await ctx.send("**That profile background name doesn't exist.**")
+         async with self.config.backgrounds() as bgs:
+            if name in bgs["profile"].keys():
+                del bgs["profile"][name]
+                await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
+            else:
+                await ctx.send("**That profile background name doesn't exist.**")           
 
     @checks.is_owner()
     @lvladminbg.command()
     @commands.guild_only()
     async def delrankbg(self, ctx, name: str):
         """Delete a rank background."""
-        bgs = await self.config.backgrounds()
-        if name in bgs["rank"].keys():
-            await self.config.clear_raw("backgrounds", "rank", name)
-            await ctx.send("**The rank background (`{}`) has been deleted.**".format(name))
-        else:
-            await ctx.send("**That rank background name doesn't exist.**")
+        async with self.config.backgrounds() as bgs:
+            if name in bgs["rank"].keys():
+                del bgs["rank"][name]
+                await ctx.send("**The rank background (`{}`) has been deleted.**".format(name))
+            else:
+                await ctx.send("**That rank background name doesn't exist.**")
 
     @checks.is_owner()
     @lvladminbg.command()
     @commands.guild_only()
     async def dellevelbg(self, ctx, name: str):
         """Delete a level background."""
-        bgs = await self.config.backgrounds()
-        if name in bgs["levelup"].keys():
-            await self.config.clear_raw("backgrounds", "levelup", name)
-            await ctx.send("**The level-up background (`{}`) has been deleted.**".format(name))
-        else:
-            await ctx.send("**That level-up background name doesn't exist.**")
+        async with self.config.backgrounds() as bgs:
+            if name in bgs["levelup"].keys():
+                del bgs["levelup"][name]
+                await ctx.send("**The levelup background (`{}`) has been deleted.**".format(name))
+            else:
+                await ctx.send("**That levelup background name doesn't exist.**")  
 
     @commands.command(name='backgrounds')
     @commands.guild_only()
@@ -1947,7 +1940,7 @@ class Leveler(commands.Cog):
         title_fnt = ImageFont.truetype(font_file, 18, encoding="utf-8")
         sub_header_fnt = ImageFont.truetype(font_bold_file, 14, encoding="utf-8")
         badge_fnt = ImageFont.truetype(font_bold_file, 10, encoding="utf-8")
-        exp_fnt = ImageFont.truetype(font_bold_file, 13, encoding="utf-8")
+        exp_fnt = ImageFont.truetype(font_bold_file, 14, encoding="utf-8")
         large_fnt = ImageFont.truetype(font_bold_file, 33, encoding="utf-8")
         level_label_fnt = ImageFont.truetype(font_bold_file, 22, encoding="utf-8")
         general_info_fnt = ImageFont.truetype(font_bold_file, 15, encoding="utf-8")
