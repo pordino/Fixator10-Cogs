@@ -58,14 +58,14 @@ class Leveler(commands.Cog):
                     "miraikuriyama": "http://i.imgur.com/jQ4s4jj.png",
                     "mountaindawn": "http://i.imgur.com/kJ1yYY6.jpg",
                     "waterlilies": "http://i.imgur.com/qwdcJjI.jpg",
-                    "greenery": "http://i.imgur.com/70ZH6LX.png"
+                    "greenery": "http://i.imgur.com/70ZH6LX.png",
+                    "abstract": "http://i.imgur.com/70ZH6LX.png"
                 },
                 "rank": {
                     "aurora": "http://i.imgur.com/gVSbmYj.jpg",
                     "default": "http://i.imgur.com/SorwIrc.jpg",
                     "nebula": "http://i.imgur.com/V5zSCmO.jpg",
                     "mountain": "http://i.imgur.com/qYqEUYp.jpg",
-                    "abstract": "http://i.imgur.com/70ZH6LX.png",
                     "city": "http://i.imgur.com/yr2cUM9.jpg",
                 },
                 "levelup": {
