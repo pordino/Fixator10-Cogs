@@ -1857,7 +1857,7 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def delprofilebg(self, ctx, name: str):
         """Delete a profile background."""
-         async with self.config.backgrounds() as bgs:
+        async with self.config.backgrounds() as bgs:
             if name in bgs["profile"].keys():
                 del bgs["profile"][name]
                 await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
