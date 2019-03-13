@@ -45,32 +45,15 @@ class Leveler(commands.Cog):
         default_global = {
             "bg_price": 0,
             "badge_type": "circles",
+            "removed_backgrounds": {
+                "profile": [],
+                "rank": [],
+                "levelup": [],
+            },
             "backgrounds": {
-                "profile": {
-                    "alice": "http://i.imgur.com/MUSuMao.png",
-                    "bluestairs": "http://i.imgur.com/EjuvxjT.png",
-                    "lamp": "http://i.imgur.com/0nQSmKX.jpg",
-                    "coastline": "http://i.imgur.com/XzUtY47.jpg",
-                    "redblack": "http://i.imgur.com/74J2zZn.jpg",
-                    "default": "http://i.imgur.com/8T1FUP5.jpg",
-                    "iceberg": "http://i.imgur.com/8KowiMh.png",
-                    "miraiglasses": "http://i.imgur.com/2Ak5VG3.png",
-                    "miraikuriyama": "http://i.imgur.com/jQ4s4jj.png",
-                    "mountaindawn": "http://i.imgur.com/kJ1yYY6.jpg",
-                    "waterlilies": "http://i.imgur.com/qwdcJjI.jpg",
-                    "greenery": "http://i.imgur.com/70ZH6LX.png",
-                    "abstract": "http://i.imgur.com/70ZH6LX.png"
-                },
-                "rank": {
-                    "aurora": "http://i.imgur.com/gVSbmYj.jpg",
-                    "default": "http://i.imgur.com/SorwIrc.jpg",
-                    "nebula": "http://i.imgur.com/V5zSCmO.jpg",
-                    "mountain": "http://i.imgur.com/qYqEUYp.jpg",
-                    "city": "http://i.imgur.com/yr2cUM9.jpg",
-                },
-                "levelup": {
-                    "default": "http://i.imgur.com/eEFfKqa.jpg",
-                },
+                "profile": {},
+                "rank": {},
+                "levelup": {},
             }
         }
         default_guild = {
@@ -89,6 +72,69 @@ class Leveler(commands.Cog):
 
     def __unload(self):
         self.session.detach()
+
+    @property
+    def DEFAULT_BGS(self):
+        return {
+                "profile": {
+                    "alice": "http://i.imgur.com/MUSuMao.png",
+                    "bluestairs": "http://i.imgur.com/EjuvxjT.png",
+                    "lamp": "http://i.imgur.com/0nQSmKX.jpg",
+                    "coastline": "http://i.imgur.com/XzUtY47.jpg",
+                    "redblack": "http://i.imgur.com/74J2zZn.jpg",
+                    "default": "http://i.imgur.com/8T1FUP5.jpg",
+                    "iceberg": "http://i.imgur.com/8KowiMh.png",
+                    "miraiglasses": "http://i.imgur.com/2Ak5VG3.png",
+                    "miraikuriyama": "http://i.imgur.com/jQ4s4jj.png",
+                    "mountaindawn": "http://i.imgur.com/kJ1yYY6.jpg",
+                    "waterlilies": "http://i.imgur.com/qwdcJjI.jpg",
+                    "greenery": "http://i.imgur.com/70ZH6LX.png",
+                    "abstract": "http://i.imgur.com/70ZH6LX.png",
+                },
+                "rank": {
+                    "aurora": "http://i.imgur.com/gVSbmYj.jpg",
+                    "default": "http://i.imgur.com/SorwIrc.jpg",
+                    "nebula": "http://i.imgur.com/V5zSCmO.jpg",
+                    "mountain": "http://i.imgur.com/qYqEUYp.jpg",
+                    "city": "http://i.imgur.com/yr2cUM9.jpg",
+                },
+                "levelup": {
+                    "default": "http://i.imgur.com/eEFfKqa.jpg",
+                },
+            }
+
+    async def get_backgrounds(self):
+        ret = self.DEFAULT_BGS
+        removal_dict = await self.config.removed_backgrounds()
+
+        for bg_type, removals in removal_dict.items():
+            for rem in removals:
+                ret[bg_type].pop(rem, None)
+
+        user_backgrounds = await self.config.backgrounds()
+
+        for bg_type, update_with in user_backgrounds.items():
+            ret[bg_type].update(update_with)
+
+        return ret
+
+    async def delete_background(self, bg_type: str, bg_name: str):
+
+        found = False
+        async with self.config.backgrounds() as bgs:
+            if bg_name in bgs[bg_type]:
+                found = True
+                del bgs[bg_type][bg_name]
+                
+        try:
+            _k = self.DEFAULT_BGS[bg_type][bg_name]
+        except KeyError:
+            if not found:
+                raise
+        else:
+            async with self.config.removed_backgrounds() as rms:
+                if bg_name not in rms[bg_type]:
+                    rms[bg_type].append(bg_name)
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(name="profile")
@@ -795,7 +841,7 @@ class Leveler(commands.Cog):
         """Set your level background"""
         user = ctx.author
         server = ctx.guild
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         # creates user if doesn't exist
         await self._create_user(user, server)
 
@@ -821,7 +867,7 @@ class Leveler(commands.Cog):
         """Set your profile background"""
         user = ctx.author
         server = ctx.guild
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         # creates user if doesn't exist
         await self._create_user(user, server)
 
@@ -847,7 +893,7 @@ class Leveler(commands.Cog):
         """Set your rank background"""
         user = ctx.author
         server = ctx.guild
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         # creates user if doesn't exist
         await self._create_user(user, server)
 
@@ -1787,7 +1833,7 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def addprofilebg(self, ctx, name: str, url: str):
         """Add a profile background. Proportions: (290px x 290px)"""
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         if name in backgrounds["profile"].keys():
             await ctx.send("**That profile background name already exists!**")
         elif not await self._valid_image_url(url):
@@ -1802,7 +1848,7 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def addrankbg(self, ctx, name: str, url: str):
         """Add a rank background. Proportions: (360px x 100px)"""
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         if name in backgrounds["profile"].keys():
             await ctx.send("**That rank background name already exists!**")
         elif not await self._valid_image_url(url):
@@ -1817,7 +1863,7 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def addlevelbg(self, ctx, name: str, url: str):
         """Add a level-up background. Proportions: (85px x 105px)"""
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         if name in backgrounds["levelup"].keys():
             await ctx.send("**That level-up background name already exists!**")
         elif not await self._valid_image_url(url):
@@ -1857,43 +1903,43 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def delprofilebg(self, ctx, name: str):
         """Delete a profile background."""
-        async with self.config.backgrounds() as bgs:
-            if name in bgs["profile"].keys():
-                del bgs["profile"][name]
-                await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
-            else:
-                await ctx.send("**That profile background name doesn't exist.**")           
+        try:
+            await self.delete_background("profile", name)
+        except KeyError:
+            return await ctx.send("**That profile background name doesn't exist.**")
+        else:
+            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
 
     @checks.is_owner()
     @lvladminbg.command()
     @commands.guild_only()
     async def delrankbg(self, ctx, name: str):
         """Delete a rank background."""
-        async with self.config.backgrounds() as bgs:
-            if name in bgs["rank"].keys():
-                del bgs["rank"][name]
-                await ctx.send("**The rank background (`{}`) has been deleted.**".format(name))
-            else:
-                await ctx.send("**That rank background name doesn't exist.**")
+        try:
+            await self.delete_background("rank", name)
+        except KeyError:
+            return await ctx.send("**That profile background name doesn't exist.**")
+        else:
+            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
 
     @checks.is_owner()
     @lvladminbg.command()
     @commands.guild_only()
     async def dellevelbg(self, ctx, name: str):
         """Delete a level background."""
-        async with self.config.backgrounds() as bgs:
-            if name in bgs["levelup"].keys():
-                del bgs["levelup"][name]
-                await ctx.send("**The levelup background (`{}`) has been deleted.**".format(name))
-            else:
-                await ctx.send("**That levelup background name doesn't exist.**")  
+        try:
+            await self.delete_background("levelup", name)
+        except KeyError:
+            return await ctx.send("**That profile background name doesn't exist.**")
+        else:
+            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
 
     @commands.command(name='backgrounds')
     @commands.guild_only()
     async def disp_backgrounds(self, ctx, bg_type):
         """Gives a list of backgrounds. [p]backgrounds [profile|rank|levelup]"""
         server = ctx.guild
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
 
         if await self.config.guild(server).disabled():
             await ctx.send("**Leveler commands for this server are disabled!**")
@@ -2866,7 +2912,7 @@ class Leveler(commands.Cog):
 
     # handles user creation, adding new server, blocking
     async def _create_user(self, user, server):
-        backgrounds = await self.config.backgrounds()
+        backgrounds = await self.get_backgrounds()
         if user.bot:
             return
         try:
