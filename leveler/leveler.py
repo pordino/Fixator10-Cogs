@@ -26,7 +26,8 @@ from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
 client = MongoClient()
-db = client['leveler']
+db = client["leveler"]
+
 
 async def non_global_bank(ctx):
     return not await bank.is_global()
@@ -45,16 +46,8 @@ class Leveler(commands.Cog):
         default_global = {
             "bg_price": 0,
             "badge_type": "circles",
-            "removed_backgrounds": {
-                "profile": [],
-                "rank": [],
-                "levelup": [],
-            },
-            "backgrounds": {
-                "profile": {},
-                "rank": {},
-                "levelup": {},
-            }
+            "removed_backgrounds": {"profile": [], "rank": [], "levelup": []},
+            "backgrounds": {"profile": {}, "rank": {}, "levelup": {}},
         }
         default_guild = {
             "disabled": False,
@@ -64,7 +57,7 @@ class Leveler(commands.Cog):
             "private_lvl_message": False,
             "lvl_msg_lock": None,
             "msg_credits": 0,
-            "ignored_channels": []
+            "ignored_channels": [],
         }
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
@@ -76,32 +69,30 @@ class Leveler(commands.Cog):
     @property
     def DEFAULT_BGS(self):
         return {
-                "profile": {
-                    "alice": "http://i.imgur.com/MUSuMao.png",
-                    "bluestairs": "http://i.imgur.com/EjuvxjT.png",
-                    "lamp": "http://i.imgur.com/0nQSmKX.jpg",
-                    "coastline": "http://i.imgur.com/XzUtY47.jpg",
-                    "redblack": "http://i.imgur.com/74J2zZn.jpg",
-                    "default": "http://i.imgur.com/8T1FUP5.jpg",
-                    "iceberg": "http://i.imgur.com/8KowiMh.png",
-                    "miraiglasses": "http://i.imgur.com/2Ak5VG3.png",
-                    "miraikuriyama": "http://i.imgur.com/jQ4s4jj.png",
-                    "mountaindawn": "http://i.imgur.com/kJ1yYY6.jpg",
-                    "waterlilies": "http://i.imgur.com/qwdcJjI.jpg",
-                    "greenery": "http://i.imgur.com/70ZH6LX.png",
-                    "abstract": "http://i.imgur.com/70ZH6LX.png",
-                },
-                "rank": {
-                    "aurora": "http://i.imgur.com/gVSbmYj.jpg",
-                    "default": "http://i.imgur.com/SorwIrc.jpg",
-                    "nebula": "http://i.imgur.com/V5zSCmO.jpg",
-                    "mountain": "http://i.imgur.com/qYqEUYp.jpg",
-                    "city": "http://i.imgur.com/yr2cUM9.jpg",
-                },
-                "levelup": {
-                    "default": "http://i.imgur.com/eEFfKqa.jpg",
-                },
-            }
+            "profile": {
+                "alice": "http://i.imgur.com/MUSuMao.png",
+                "bluestairs": "http://i.imgur.com/EjuvxjT.png",
+                "lamp": "http://i.imgur.com/0nQSmKX.jpg",
+                "coastline": "http://i.imgur.com/XzUtY47.jpg",
+                "redblack": "http://i.imgur.com/74J2zZn.jpg",
+                "default": "http://i.imgur.com/8T1FUP5.jpg",
+                "iceberg": "http://i.imgur.com/8KowiMh.png",
+                "miraiglasses": "http://i.imgur.com/2Ak5VG3.png",
+                "miraikuriyama": "http://i.imgur.com/jQ4s4jj.png",
+                "mountaindawn": "http://i.imgur.com/kJ1yYY6.jpg",
+                "waterlilies": "http://i.imgur.com/qwdcJjI.jpg",
+                "greenery": "http://i.imgur.com/70ZH6LX.png",
+                "abstract": "http://i.imgur.com/70ZH6LX.png",
+            },
+            "rank": {
+                "aurora": "http://i.imgur.com/gVSbmYj.jpg",
+                "default": "http://i.imgur.com/SorwIrc.jpg",
+                "nebula": "http://i.imgur.com/V5zSCmO.jpg",
+                "mountain": "http://i.imgur.com/qYqEUYp.jpg",
+                "city": "http://i.imgur.com/yr2cUM9.jpg",
+            },
+            "levelup": {"default": "http://i.imgur.com/eEFfKqa.jpg"},
+        }
 
     async def get_backgrounds(self):
         ret = self.DEFAULT_BGS
@@ -125,7 +116,7 @@ class Leveler(commands.Cog):
             if bg_name in bgs[bg_type]:
                 found = True
                 del bgs[bg_type][bg_name]
-                
+
         try:
             _k = self.DEFAULT_BGS[bg_type][bg_name]
         except KeyError:
@@ -149,7 +140,7 @@ class Leveler(commands.Cog):
 
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         # check if disabled
         if await self.config.guild(ctx.guild).disabled():
@@ -163,14 +154,17 @@ class Leveler(commands.Cog):
         else:
             async with ctx.channel.typing():
                 await self.draw_profile(user, server)
-                file = discord.File(f"{cog_data_path(self)}/{user.id}_profile.png", filename="profile.png")
-                await channel.send('**User profile for {}**'.format(await self._is_mention(user)),
-                                   file=file)
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "profile_block": curr_time,
-            }}, upsert=True)
+                file = discord.File(
+                    f"{cog_data_path(self)}/{user.id}_profile.png", filename="profile.png"
+                )
+                await channel.send(
+                    "**User profile for {}**".format(await self._is_mention(user)), file=file
+                )
+            db.users.update_one(
+                {"user_id": str(user.id)}, {"$set": {"profile_block": curr_time}}, upsert=True
+            )
             try:
-                os.remove(f'{cog_data_path(self)}/{user.id}_profile.png')
+                os.remove(f"{cog_data_path(self)}/{user.id}_profile.png")
             except:
                 pass
 
@@ -184,15 +178,21 @@ class Leveler(commands.Cog):
         em = discord.Embed(colour=user.colour)
         em.add_field(name="Title:", value=test_empty(userinfo["title"]))
         em.add_field(name="Reps:", value=userinfo["rep"])
-        em.add_field(name="Global Rank:", value='#{}'.format(await self._find_global_rank(user)))
-        em.add_field(name="Server Rank:", value='#{}'.format(await self._find_server_rank(user, server)))
-        em.add_field(name="Server Level:", value=format(userinfo["servers"][str(server.id)]["level"]))
+        em.add_field(name="Global Rank:", value="#{}".format(await self._find_global_rank(user)))
+        em.add_field(
+            name="Server Rank:", value="#{}".format(await self._find_server_rank(user, server))
+        )
+        em.add_field(
+            name="Server Level:", value=format(userinfo["servers"][str(server.id)]["level"])
+        )
         em.add_field(name="Total Exp:", value=userinfo["total_exp"])
         em.add_field(name="Server Exp:", value=await self._find_server_exp(user, server))
         u_credits = await bank.get_balance(user)
         em.add_field(name="Credits: ", value="${}".format(u_credits))
         em.add_field(name="Info: ", value=test_empty(userinfo["info"]))
-        em.add_field(name="Badges: ", value=test_empty(", ".join(userinfo["badges"])).replace("_", " "))
+        em.add_field(
+            name="Badges: ", value=test_empty(", ".join(userinfo["badges"])).replace("_", " ")
+        )
         em.set_author(name="Profile for {}".format(user.name), url=user.avatar_url)
         em.set_thumbnail(url=user.avatar_url)
         return em
@@ -210,7 +210,7 @@ class Leveler(commands.Cog):
 
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         # check if disabled
         if await self.config.guild(ctx.guild).disabled():
@@ -220,24 +220,32 @@ class Leveler(commands.Cog):
         # no cooldown for text only
         if await self.config.guild(server).text_only():
             em = await self.rank_text(user, server, userinfo)
-            await self.bot.send_message(channel, '', embed=em)
+            await self.bot.send_message(channel, "", embed=em)
         else:
             async with channel.typing():
                 await self.draw_rank(user, server)
-                file = discord.File(f"{cog_data_path(self)}/{user.id}_rank.png", filename="rank.png")
-                await channel.send('**Ranking & Statistics for {}**'.format(await self._is_mention(user)),
-                                   file=file)
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "rank_block".format(server.id): curr_time,
-            }}, upsert=True)
+                file = discord.File(
+                    f"{cog_data_path(self)}/{user.id}_rank.png", filename="rank.png"
+                )
+                await channel.send(
+                    "**Ranking & Statistics for {}**".format(await self._is_mention(user)),
+                    file=file,
+                )
+            db.users.update_one(
+                {"user_id": str(user.id)},
+                {"$set": {"rank_block".format(server.id): curr_time}},
+                upsert=True,
+            )
             try:
-                os.remove(f'{cog_data_path(self)}/{user.id}_rank.png')
+                os.remove(f"{cog_data_path(self)}/{user.id}_rank.png")
             except:
                 pass
 
     async def rank_text(self, user, server, userinfo):
         em = discord.Embed(colour=user.colour)
-        em.add_field(name="Server Rank", value='#{}'.format(await self._find_server_rank(user, server)))
+        em.add_field(
+            name="Server Rank", value="#{}".format(await self._find_server_rank(user, server))
+        )
         em.add_field(name="Reps", value=userinfo["rep"])
         em.add_field(name="Server Level", value=userinfo["servers"][str(server.id)]["level"])
         em.add_field(name="Server Exp", value=await self._find_server_exp(user, server))
@@ -267,7 +275,7 @@ class Leveler(commands.Cog):
 
         users = []
         user_stat = None
-        if '-rep' in options and '-global' in options:
+        if "-rep" in options and "-global" in options:
             title = "Global Rep Leaderboard for {}\n".format(self.bot.user.name)
             for userinfo in db.users.find({}):
                 try:
@@ -278,11 +286,12 @@ class Leveler(commands.Cog):
                 if str(user.id) == userinfo["user_id"]:
                     user_stat = userinfo["rep"]
 
-            board_type = 'Rep'
+            board_type = "Rep"
             footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_global_rep_rank(user), board_type, user_stat)
+                await self._find_global_rep_rank(user), board_type, user_stat
+            )
             icon_url = self.bot.user.avatar_url
-        elif '-global' in options:
+        elif "-global" in options:
             title = "Global Exp Leaderboard for {}\n".format(self.bot.user.name)
             for userinfo in db.users.find({}):
                 try:
@@ -293,11 +302,12 @@ class Leveler(commands.Cog):
                 if str(user.id) == userinfo["user_id"]:
                     user_stat = userinfo["total_exp"]
 
-            board_type = 'Points'
+            board_type = "Points"
             footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_global_rank(user), board_type, user_stat)
+                await self._find_global_rank(user), board_type, user_stat
+            )
             icon_url = self.bot.user.avatar_url
-        elif '-rep' in options:
+        elif "-rep" in options:
             title = "Rep Leaderboard for {}\n".format(server.name)
             for userinfo in db.users.find({}):
                 if "servers" in userinfo and str(server.id) in userinfo["servers"]:
@@ -309,9 +319,10 @@ class Leveler(commands.Cog):
                 if str(user.id) == userinfo["user_id"]:
                     user_stat = userinfo["rep"]
 
-            board_type = 'Rep'
+            board_type = "Rep"
             footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_server_rep_rank(user, server), board_type, user_stat)
+                await self._find_server_rep_rank(user, server), board_type, user_stat
+            )
             icon_url = server.icon_url
         else:
             title = "Exp Leaderboard for {}\n".format(server.name)
@@ -328,10 +339,12 @@ class Leveler(commands.Cog):
                             users.append((userinfo["user_id"], server_exp))
                 except Exception as e:
                     print(e)
-            board_type = 'Points'
+            board_type = "Points"
             footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_server_rank(user, server), board_type,
-                await self._find_server_exp(user, server))
+                await self._find_server_rank(user, server),
+                board_type,
+                await self._find_server_exp(user, server),
+            )
             icon_url = server.icon_url
         sorted_list = sorted(users, key=operator.itemgetter(1), reverse=True)
 
@@ -344,7 +357,9 @@ class Leveler(commands.Cog):
                 if page >= 1 and int(option) <= pages:
                     page = int(str(option))
                 else:
-                    await ctx.send("**Please enter a valid page number! (1 - {})**".format(str(pages)))
+                    await ctx.send(
+                        "**Please enter a valid page number! (1 - {})**".format(str(pages))
+                    )
                     return
                 break
 
@@ -363,13 +378,17 @@ class Leveler(commands.Cog):
             else:
                 label = default_label
 
-            msg += u'{:<2}{:<2}{:<2} # {:<11}'.format(rank, label, u"➤", self._truncate_text(single_user[0], 11))
-            msg += u'{:>5}{:<2}{:<2}{:<5}\n'.format(" ", " ", " ", " {}: ".format(board_type) + str(single_user[1]))
+            msg += "{:<2}{:<2}{:<2} # {:<11}".format(
+                rank, label, "➤", self._truncate_text(single_user[0], 11)
+            )
+            msg += "{:>5}{:<2}{:<2}{:<5}\n".format(
+                " ", " ", " ", " {}: ".format(board_type) + str(single_user[1])
+            )
             rank += 1
         msg += "--------------------------------------------            \n"
         msg += "{}".format(footer_text)
 
-        em = discord.Embed(description='', colour=user.colour)
+        em = discord.Embed(description="", colour=user.colour)
         em.set_author(name=title, icon_url=icon_url)
         em.description = box(msg)
 
@@ -386,7 +405,7 @@ class Leveler(commands.Cog):
         await self._create_user(org_user, server)
         if user:
             await self._create_user(user, server)
-        org_userinfo = db.users.find_one({'user_id': str(org_user.id)})
+        org_userinfo = db.users.find_one({"user_id": str(org_user.id)})
         curr_time = time.time()
 
         if await self.config.guild(ctx.guild).disabled():
@@ -403,14 +422,14 @@ class Leveler(commands.Cog):
 
         delta = float(curr_time) - float(org_userinfo["rep_block"])
         if user and delta >= 43200.0 and delta > 0:
-            userinfo = db.users.find_one({'user_id': str(user.id)})
-            db.users.update_one({'user_id': str(org_user.id)}, {'$set': {
-                "rep_block": curr_time,
-            }})
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "rep": userinfo["rep"] + 1,
-            }})
-            await ctx.send("**You have just given {} a reputation point!**".format(await self._is_mention(user)))
+            userinfo = db.users.find_one({"user_id": str(user.id)})
+            db.users.update_one({"user_id": str(org_user.id)}, {"$set": {"rep_block": curr_time}})
+            db.users.update_one({"user_id": str(user.id)}, {"$set": {"rep": userinfo["rep"] + 1}})
+            await ctx.send(
+                "**You have just given {} a reputation point!**".format(
+                    await self._is_mention(user)
+                )
+            )
         else:
             # calulate time left
             seconds = 43200 - delta
@@ -422,7 +441,9 @@ class Leveler(commands.Cog):
             h, m = divmod(m, 60)
             await ctx.send(
                 "**You need to wait {} hours, {} minutes, and {} seconds until you can give reputation again!**".format(
-                    int(h), int(m), int(s)))
+                    int(h), int(m), int(s)
+                )
+            )
 
     @commands.command()
     @commands.guild_only()
@@ -431,7 +452,7 @@ class Leveler(commands.Cog):
         if not user:
             user = ctx.author
         server = ctx.guild
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         if await self.config.guild(ctx.guild).disabled():
             await ctx.send("**Leveler commands for this server are disabled!**")
@@ -455,29 +476,39 @@ class Leveler(commands.Cog):
         msg += "Rank background: {}\n".format(userinfo["rank_background"])
         msg += "Levelup background: {}\n".format(userinfo["levelup_background"])
         if "profile_info_color" in userinfo.keys() and userinfo["profile_info_color"]:
-            msg += "Profile info color: {}\n".format(self._rgb_to_hex(userinfo["profile_info_color"]))
+            msg += "Profile info color: {}\n".format(
+                self._rgb_to_hex(userinfo["profile_info_color"])
+            )
         if "profile_exp_color" in userinfo.keys() and userinfo["profile_exp_color"]:
-            msg += "Profile exp color: {}\n".format(self._rgb_to_hex(userinfo["profile_exp_color"]))
+            msg += "Profile exp color: {}\n".format(
+                self._rgb_to_hex(userinfo["profile_exp_color"])
+            )
         if "rep_color" in userinfo.keys() and userinfo["rep_color"]:
             msg += "Rep section color: {}\n".format(self._rgb_to_hex(userinfo["rep_color"]))
         if "badge_col_color" in userinfo.keys() and userinfo["badge_col_color"]:
-            msg += "Badge section color: {}\n".format(self._rgb_to_hex(userinfo["badge_col_color"]))
+            msg += "Badge section color: {}\n".format(
+                self._rgb_to_hex(userinfo["badge_col_color"])
+            )
         if "rank_info_color" in userinfo.keys() and userinfo["rank_info_color"]:
             msg += "Rank info color: {}\n".format(self._rgb_to_hex(userinfo["rank_info_color"]))
         if "rank_exp_color" in userinfo.keys() and userinfo["rank_exp_color"]:
             msg += "Rank exp color: {}\n".format(self._rgb_to_hex(userinfo["rank_exp_color"]))
         if "levelup_info_color" in userinfo.keys() and userinfo["levelup_info_color"]:
-            msg += "Level info color: {}\n".format(self._rgb_to_hex(userinfo["levelup_info_color"]))
+            msg += "Level info color: {}\n".format(
+                self._rgb_to_hex(userinfo["levelup_info_color"])
+            )
         msg += "Badges: "
         msg += ", ".join(userinfo["badges"])
 
         em = discord.Embed(description=msg, colour=user.colour)
-        em.set_author(name="Profile Information for {}".format(user.name), icon_url=user.avatar_url)
+        em.set_author(
+            name="Profile Information for {}".format(user.name), icon_url=user.avatar_url
+        )
         await ctx.send(embed=em)
 
     def _rgb_to_hex(self, rgb):
         rgb = tuple(rgb[:3])
-        return '#%02x%02x%02x' % rgb
+        return "#%02x%02x%02x" % rgb
 
     @commands.group(name="lvlset", pass_context=True)
     async def lvlset(self, ctx):
@@ -506,7 +537,7 @@ class Leveler(commands.Cog):
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         section = section.lower()
         default_info_color = (30, 30, 30, 200)
@@ -579,32 +610,45 @@ class Leveler(commands.Cog):
 
         if section == "all":
             if len(set_color) == 1:
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "profile_exp_color": set_color[0],
-                    "rep_color": set_color[0],
-                    "badge_col_color": set_color[0],
-                    "profile_info_color": set_color[0]
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "profile_exp_color": set_color[0],
+                            "rep_color": set_color[0],
+                            "badge_col_color": set_color[0],
+                            "profile_info_color": set_color[0],
+                        }
+                    },
+                )
             elif color == "default":
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "profile_exp_color": default_exp,
-                    "rep_color": default_rep,
-                    "badge_col_color": default_badge,
-                    "profile_info_color": default_info_color
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "profile_exp_color": default_exp,
+                            "rep_color": default_rep,
+                            "badge_col_color": default_badge,
+                            "profile_info_color": default_info_color,
+                        }
+                    },
+                )
             elif color == "auto":
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "profile_exp_color": set_color[0],
-                    "rep_color": set_color[1],
-                    "badge_col_color": set_color[2],
-                    "profile_info_color": set_color[3]
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "profile_exp_color": set_color[0],
+                            "rep_color": set_color[1],
+                            "badge_col_color": set_color[2],
+                            "profile_info_color": set_color[3],
+                        }
+                    },
+                )
             await ctx.send("**Colors for profile set.**")
         else:
             # print("update one")
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                section_name: set_color[0]
-            }})
+            db.users.update_one({"user_id": str(user.id)}, {"$set": {section_name: set_color[0]}})
             await ctx.send("**Color for profile {} set.**".format(section))
 
     @rankset.command(name="color")
@@ -615,7 +659,7 @@ class Leveler(commands.Cog):
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         section = section.lower()
         default_info_color = (30, 30, 30, 200)
@@ -675,25 +719,28 @@ class Leveler(commands.Cog):
 
         if section == "all":
             if len(set_color) == 1:
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "rank_exp_color": set_color[0],
-                    "rank_info_color": set_color[0]
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {"$set": {"rank_exp_color": set_color[0], "rank_info_color": set_color[0]}},
+                )
             elif color == "default":
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "rank_exp_color": default_exp,
-                    "rank_info_color": default_info_color
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "rank_exp_color": default_exp,
+                            "rank_info_color": default_info_color,
+                        }
+                    },
+                )
             elif color == "auto":
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "rank_exp_color": set_color[0],
-                    "rank_info_color": set_color[1]
-                }})
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {"$set": {"rank_exp_color": set_color[0], "rank_info_color": set_color[1]}},
+                )
             await ctx.send("**Colors for rank set.**")
         else:
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                section_name: set_color[0]
-            }})
+            db.users.update_one({"user_id": str(user.id)}, {"$set": {section_name: set_color[0]}})
             await ctx.send("**Color for rank {} set.**".format(section))
 
     @levelupset.command(name="color")
@@ -704,7 +751,7 @@ class Leveler(commands.Cog):
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         section = section.lower()
         default_info_color = (30, 30, 30, 200)
@@ -746,9 +793,7 @@ class Leveler(commands.Cog):
             await ctx.send("**Not a valid color. (default, hex, white, auto)**")
             return
 
-        db.users.update_one({'user_id': str(user.id)}, {'$set': {
-            section_name: set_color[0]
-        }})
+        db.users.update_one({"user_id": str(user.id)}, {"$set": {section_name: set_color[0]}})
         await ctx.send("**Color for level-up {} set.**".format(section))
 
     # uses k-means algorithm to find color from bg, rank is abundance of color, descending
@@ -759,10 +804,10 @@ class Leveler(commands.Cog):
 
         async with self.session.get(url) as r:
             image = await r.content.read()
-        with open(f'{cog_data_path(self)}/temp_auto.png', 'wb') as f:
+        with open(f"{cog_data_path(self)}/temp_auto.png", "wb") as f:
             f.write(image)
 
-        im = Image.open(f'{cog_data_path(self)}/temp_auto.png').convert('RGBA')
+        im = Image.open(f"{cog_data_path(self)}/temp_auto.png").convert("RGBA")
         im = im.resize((290, 290))  # resized to reduce time
         ar = scipy.misc.fromimage(im)
         shape = ar.shape
@@ -786,19 +831,19 @@ class Leveler(commands.Cog):
             peak = codes[sorted_list[color_index][0]]  # gets the original index
             peak = peak.astype(int)
 
-            colors.append(''.join(format(c, '02x') for c in peak))
+            colors.append("".join(format(c, "02x") for c in peak))
         return colors  # returns array
 
     # converts hex to rgb
     def _hex_to_rgb(self, hex_num: str, a: int):
-        h = hex_num.lstrip('#')
+        h = hex_num.lstrip("#")
 
         # if only 3 characters are given
         if len(str(h)) == 3:
-            expand = ''.join([x * 2 for x in str(h)])
+            expand = "".join([x * 2 for x in str(h)])
             h = expand
 
-        colors = [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+        colors = [int(h[i : i + 2], 16) for i in (0, 2, 4)]
         colors.append(a)
         return tuple(colors)
 
@@ -830,10 +875,12 @@ class Leveler(commands.Cog):
             return
 
         if len(info) < max_char:
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {"info": info}})
+            db.users.update_one({"user_id": str(user.id)}, {"$set": {"info": info}})
             await ctx.send("**Your info section has been succesfully set!**")
         else:
-            await ctx.send("**Your description has too many characters! Must be <{}**".format(max_char))
+            await ctx.send(
+                "**Your description has too many characters! Must be <{}**".format(max_char)
+            )
 
     @levelupset.command(name="bg")
     @commands.guild_only()
@@ -855,11 +902,19 @@ class Leveler(commands.Cog):
 
         if image_name in backgrounds["levelup"].keys():
             if await self._process_purchase(ctx):
-                db.users.update_one({'user_id': str(user.id)},
-                                    {'$set': {"levelup_background": backgrounds["levelup"][image_name]}})
-                await ctx.send("**Your new level-up background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset levelup color info auto`".format(ctx.prefix))
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {"$set": {"levelup_background": backgrounds["levelup"][image_name]}},
+                )
+                await ctx.send(
+                    "**Your new level-up background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset levelup color info auto`".format(
+                        ctx.prefix
+                    )
+                )
         else:
-            await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds levelup`")
+            await ctx.send(
+                f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds levelup`"
+            )
 
     @profileset.command(name="bg")
     @commands.guild_only()
@@ -881,11 +936,19 @@ class Leveler(commands.Cog):
 
         if image_name in backgrounds["profile"].keys():
             if await self._process_purchase(ctx):
-                db.users.update_one({'user_id': str(user.id)},
-                                    {'$set': {"profile_background": backgrounds["profile"][image_name]}})
-                await ctx.send("**Your new profile background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset profile color all auto`".format(ctx.prefix))
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {"$set": {"profile_background": backgrounds["profile"][image_name]}},
+                )
+                await ctx.send(
+                    "**Your new profile background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset profile color all auto`".format(
+                        ctx.prefix
+                    )
+                )
         else:
-            await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds profile`")
+            await ctx.send(
+                f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds profile`"
+            )
 
     @rankset.command(name="bg")
     @commands.guild_only()
@@ -907,11 +970,19 @@ class Leveler(commands.Cog):
 
         if image_name in backgrounds["rank"].keys():
             if await self._process_purchase(ctx):
-                db.users.update_one({'user_id': str(user.id)},
-                                    {'$set': {"rank_background": backgrounds["rank"][image_name]}})
-                await ctx.send("**Your new rank background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset rank color all auto`".format(ctx.prefix))
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {"$set": {"rank_background": backgrounds["rank"][image_name]}},
+                )
+                await ctx.send(
+                    "**Your new rank background has been succesfully set!\nCalculate matching colors next by using** `{}lvlset rank color all auto`".format(
+                        ctx.prefix
+                    )
+                )
         else:
-            await ctx.send(f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds rank`")
+            await ctx.send(
+                f"That is not a valid bg. See available bgs at `{ctx.prefix}backgrounds rank`"
+            )
 
     @profileset.command()
     @commands.guild_only()
@@ -921,7 +992,7 @@ class Leveler(commands.Cog):
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         max_char = 20
 
         if await self.config.guild(ctx.guild).disabled():
@@ -930,7 +1001,7 @@ class Leveler(commands.Cog):
 
         if len(title) < max_char:
             userinfo["title"] = title
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {"title": title}})
+            db.users.update_one({"user_id": str(user.id)}, {"$set": {"title": title}})
             await ctx.send("**Your title has been succesfully set!**")
         else:
             await ctx.send("**Your title has too many characters! Must be <{}**".format(max_char))
@@ -947,44 +1018,34 @@ class Leveler(commands.Cog):
     async def convertv2(self, ctx, path):
         """Convert data from V2 cog."""
         base_path = Path(path)
-        fp_settings = base_path / 'data' / 'leveler' / 'settings.json'
-        fp_backgrounds = base_path / 'data' / 'leveler' / 'backgrounds.json'
+        fp_settings = base_path / "data" / "leveler" / "settings.json"
+        fp_backgrounds = base_path / "data" / "leveler" / "backgrounds.json"
         if any([not fp_settings.is_file(), not fp_backgrounds.is_file()]):
             ctx.send("Config is not found, check your path and try again")
             return
         converter = dc(self.config)
 
         def conversion_spec_bgs(v2data: dict):
-            yield {(Config.GLOBAL,): {
-                ("backgrounds",): v2data
-            }}
+            yield {(Config.GLOBAL,): {("backgrounds",): v2data}}
 
         def conversion_spec_settings(v2data: dict):
-            yield {(Config.GLOBAL,): {
-                ("bg_price",): v2data["bg_price"],
-                ("badge_type",): v2data["badge_type"],
-            }}
+            yield {
+                (Config.GLOBAL,): {
+                    ("bg_price",): v2data["bg_price"],
+                    ("badge_type",): v2data["badge_type"],
+                }
+            }
 
             for guild in v2data["disabled_servers"]:
-                yield {(Config.GUILD, guild): {
-                    ("disabled",): True
-                }}
+                yield {(Config.GUILD, guild): {("disabled",): True}}
             for guild in v2data["msg_credits"]:
-                yield {(Config.GUILD, guild): {
-                    ("msg_credits",): v2data["msg_credits"][guild]
-                }}
+                yield {(Config.GUILD, guild): {("msg_credits",): v2data["msg_credits"][guild]}}
             for guild in v2data["private_lvl_msg"]:
-                yield {(Config.GUILD, guild): {
-                    ("private_lvl_message",): True
-                }}
+                yield {(Config.GUILD, guild): {("private_lvl_message",): True}}
             for guild in v2data["lvl_msg"]:
-                yield {(Config.GUILD, guild): {
-                    ("lvl_msg",): True
-                }}
+                yield {(Config.GUILD, guild): {("lvl_msg",): True}}
             for guild in v2data["text_only"]:
-                yield {(Config.GUILD, guild): {
-                    ("text_only",): True
-                }}
+                yield {(Config.GUILD, guild): {("text_only",): True}}
 
         await converter.convert(fp_backgrounds, conversion_spec_bgs)
         await converter.convert(fp_settings, conversion_spec_settings)
@@ -1005,9 +1066,12 @@ class Leveler(commands.Cog):
             if await self.config.guild(guild).disabled():
                 disabled_servers.append(guild.name)
             if await self.config.guild(guild).lvl_msg_lock():
-                locked_channels.append("\n{} → #{}".format(guild.name,
-                                                           guild.get_channel(
-                                                               await self.config.guild(guild).lvl_msg_lock())))
+                locked_channels.append(
+                    "\n{} → #{}".format(
+                        guild.name,
+                        guild.get_channel(await self.config.guild(guild).lvl_msg_lock()),
+                    )
+                )
             if await self.config.guild(guild).lvl_msg():
                 disabled_levels.append(guild.name)
             if await self.config.guild(guild).private_lvl_message():
@@ -1053,10 +1117,14 @@ class Leveler(commands.Cog):
         Use command with no channel to see list of ignored channels."""
         server = ctx.guild
         if channel is None:
-            channels = [server.get_channel(c) and server.get_channel(c).mention or c
-                        for c in await self.config.guild(server).ignored_channels() if server.get_channel(c)]
-            await ctx.send("**Ignored channels:** \n" +
-                           ("\n".join(channels) or "No ignored channels set."))
+            channels = [
+                server.get_channel(c) and server.get_channel(c).mention or c
+                for c in await self.config.guild(server).ignored_channels()
+                if server.get_channel(c)
+            ]
+            await ctx.send(
+                "**Ignored channels:** \n" + ("\n".join(channels) or "No ignored channels set.")
+            )
             return
         if channel.id in await self.config.guild(server).ignored_channels():
             async with self.config.guild(server).ignored_channels() as channels:
@@ -1069,7 +1137,7 @@ class Leveler(commands.Cog):
 
     @lvladmin.command(name="lock")
     @commands.guild_only()
-    async def lvlmsglock(self, ctx, channel:discord.TextChannel=None):
+    async def lvlmsglock(self, ctx, channel: discord.TextChannel = None):
         """Locks levelup messages to one channel. Use with no channel to disable."""
         server = ctx.guild
 
@@ -1088,19 +1156,22 @@ class Leveler(commands.Cog):
         if bg_price != 0:
             if not await bank.can_spend(user, bg_price):
                 await ctx.send(
-                    "**Insufficient funds. Backgrounds changes cost: ${}**".format(bg_price))
+                    "**Insufficient funds. Backgrounds changes cost: ${}**".format(bg_price)
+                )
                 return False
             else:
                 await ctx.send(
-                    '**{}, you are about to buy a background for `{}`. Confirm by typing `yes`.**'.format(
-                        await self._is_mention(user), bg_price))
+                    "**{}, you are about to buy a background for `{}`. Confirm by typing `yes`.**".format(
+                        await self._is_mention(user), bg_price
+                    )
+                )
                 pred = MessagePredicate.yes_or_no(ctx)
                 try:
                     await self.bot.wait_for("message", timeout=15, check=pred)
                 except TimeoutError:
                     pass
                 if not pred:
-                    await ctx.send('**Purchase canceled.**')
+                    await ctx.send("**Purchase canceled.**")
                     return False
                 else:
                     await bank.withdraw_credits(user, bg_price)
@@ -1133,7 +1204,7 @@ class Leveler(commands.Cog):
         channel = ctx.channel
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         if await self.config.guild(ctx.guild).disabled():
             await ctx.send("Leveler commands for this server are disabled.")
@@ -1156,12 +1227,19 @@ class Leveler(commands.Cog):
         userinfo["servers"][str(server.id)]["level"] = level
         userinfo["total_exp"] += total_exp
 
-        db.users.update_one({'user_id': str(user.id)}, {'$set': {
-            "servers.{}.level".format(server.id): level,
-            "servers.{}.current_exp".format(server.id): 0,
-            "total_exp": userinfo["total_exp"]
-        }})
-        await ctx.send("**{}'s Level has been set to `{}`.**".format(await self._is_mention(user), level))
+        db.users.update_one(
+            {"user_id": str(user.id)},
+            {
+                "$set": {
+                    "servers.{}.level".format(server.id): level,
+                    "servers.{}.current_exp".format(server.id): 0,
+                    "total_exp": userinfo["total_exp"],
+                }
+            },
+        )
+        await ctx.send(
+            "**{}'s Level has been set to `{}`.**".format(await self._is_mention(user), level)
+        )
         await self._handle_levelup(user, userinfo, server, channel)
 
     @checks.is_owner()
@@ -1180,10 +1258,10 @@ class Leveler(commands.Cog):
         try:
             async with self.session.get(url) as r:
                 image = await r.content.read()
-            with open(f'{cog_data_path(self)}/test.png', 'wb') as f:
+            with open(f"{cog_data_path(self)}/test.png", "wb") as f:
                 f.write(image)
-            image = Image.open(f'{cog_data_path(self)}/test.png').convert('RGBA')
-            os.remove(f'{cog_data_path(self)}/test.png')
+            image = Image.open(f"{cog_data_path(self)}/test.png").convert("RGBA")
+            os.remove(f"{cog_data_path(self)}/test.png")
             return True
         except:
             return False
@@ -1255,7 +1333,10 @@ class Leveler(commands.Cog):
         server = ctx.guild
 
         # get server stuff
-        ids = [('global', 'Global', self.bot.user.avatar_url), (server.id, server.name, server.icon_url)]
+        ids = [
+            ("global", "Global", self.bot.user.avatar_url),
+            (server.id, server.name, server.icon_url),
+        ]
 
         title_text = "**Available Badges**"
         index = 0
@@ -1263,19 +1344,21 @@ class Leveler(commands.Cog):
             em = discord.Embed(colour=await ctx.embed_color())
             em.set_author(name="{}".format(servername), icon_url=icon_url)
             msg = ""
-            server_badge_info = db.badges.find_one({'server_id': str(serverid)})
+            server_badge_info = db.badges.find_one({"server_id": str(serverid)})
             if server_badge_info:
-                server_badges = server_badge_info['badges']
+                server_badges = server_badge_info["badges"]
                 for badgename in server_badges:
                     badgeinfo = server_badges[badgename]
-                    if badgeinfo['price'] == -1:
-                        price = 'Non-purchasable'
-                    elif badgeinfo['price'] == 0:
-                        price = 'Free'
+                    if badgeinfo["price"] == -1:
+                        price = "Non-purchasable"
+                    elif badgeinfo["price"] == 0:
+                        price = "Free"
                     else:
-                        price = badgeinfo['price']
+                        price = badgeinfo["price"]
 
-                    msg += "**• {}** ({}) - {}\n".format(badgename, price, badgeinfo['description'])
+                    msg += "**• {}** ({}) - {}\n".format(
+                        badgename, price, badgeinfo["description"]
+                    )
             else:
                 msg = "None"
 
@@ -1302,13 +1385,13 @@ class Leveler(commands.Cog):
             user = ctx.author
         server = ctx.guild
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         userinfo = self._badge_convert_dict(userinfo)
 
         # sort
         priority_badges = []
-        for badgename in userinfo['badges'].keys():
-            badge = userinfo['badges'][badgename]
+        for badgename in userinfo["badges"].keys():
+            badge = userinfo["badges"][badgename]
             priority_num = badge["priority_num"]
             if priority_num != -1:
                 priority_badges.append((badge, priority_num))
@@ -1317,8 +1400,13 @@ class Leveler(commands.Cog):
         badge_ranks = ""
         counter = 1
         for badge, priority_num in sorted_badges[:12]:
-            badge_ranks += "**{}. {}** ({}) [{}] **—** {}\n".format(counter, badge['badge_name'], badge['server_name'],
-                                                                    priority_num, badge['description'])
+            badge_ranks += "**{}. {}** ({}) [{}] **—** {}\n".format(
+                counter,
+                badge["badge_name"],
+                badge["server_name"],
+                priority_num,
+                badge["description"],
+            )
             counter += 1
         if not badge_ranks:
             badge_ranks = "None"
@@ -1343,60 +1431,81 @@ class Leveler(commands.Cog):
         """Buy a badge from the server collection or use the -global flag."""
         user = ctx.author
         server = ctx.guild
-        if global_badge == '-global':
-            serverid = 'global'
+        if global_badge == "-global":
+            serverid = "global"
         else:
             serverid = server.id
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         userinfo = self._badge_convert_dict(userinfo)
-        server_badge_info = db.badges.find_one({'server_id': str(serverid)})
+        server_badge_info = db.badges.find_one({"server_id": str(serverid)})
 
         if server_badge_info:
-            server_badges = server_badge_info['badges']
+            server_badges = server_badge_info["badges"]
             if name in server_badges:
 
-                if "{}_{}".format(name, str(serverid)) not in userinfo['badges'].keys():
+                if "{}_{}".format(name, str(serverid)) not in userinfo["badges"].keys():
                     badge_info = server_badges[name]
-                    if badge_info['price'] == -1:
-                        await ctx.send('**That badge is not purchasable.**'.format(name))
-                    elif badge_info['price'] == 0:
-                        userinfo['badges']["{}_{}".format(name, str(serverid))] = server_badges[name]
-                        db.users.update_one({'user_id': userinfo['user_id']}, {'$set': {
-                            "badges": userinfo['badges'],
-                        }})
-                        await ctx.send('**`{}` has been obtained.**'.format(name))
+                    if badge_info["price"] == -1:
+                        await ctx.send("**That badge is not purchasable.**".format(name))
+                    elif badge_info["price"] == 0:
+                        userinfo["badges"]["{}_{}".format(name, str(serverid))] = server_badges[
+                            name
+                        ]
+                        db.users.update_one(
+                            {"user_id": userinfo["user_id"]},
+                            {"$set": {"badges": userinfo["badges"]}},
+                        )
+                        await ctx.send("**`{}` has been obtained.**".format(name))
                     else:
                         await ctx.send(
                             '**{}, you are about to buy the `{}` badge for `{}`. Confirm by typing "yes"**'.format(
-                                await self._is_mention(user), name, badge_info['price']))
+                                await self._is_mention(user), name, badge_info["price"]
+                            )
+                        )
                         pred = MessagePredicate.yes_or_no(ctx)
                         try:
                             await self.bot.wait_for("message", timeout=15, check=pred)
                         except TimeoutError:
                             pass
                         if not pred:
-                            await ctx.send('**Purchase canceled.**')
+                            await ctx.send("**Purchase canceled.**")
                             return
                         else:
-                            if badge_info['price'] <= await bank.get_balance(user):
-                                await bank.withdraw_credits(user, badge_info['price'])
-                                userinfo['badges']["{}_{}".format(name, str(serverid))] = server_badges[name]
-                                db.users.update_one({'user_id': userinfo['user_id']}, {'$set': {
-                                    "badges": userinfo['badges'],
-                                }})
+                            if badge_info["price"] <= await bank.get_balance(user):
+                                await bank.withdraw_credits(user, badge_info["price"])
+                                userinfo["badges"][
+                                    "{}_{}".format(name, str(serverid))
+                                ] = server_badges[name]
+                                db.users.update_one(
+                                    {"user_id": userinfo["user_id"]},
+                                    {"$set": {"badges": userinfo["badges"]}},
+                                )
                                 await ctx.send(
-                                    '**You have bought the `{}` badge for `{}`.**'.format(name, badge_info['price']))
-                            elif await bank.get_balance(user) < badge_info['price']:
-                                await ctx.send('**Not enough money! Need `{}` more.**'.format(
-                                    badge_info['price'] - await bank.get_balance(user)))
+                                    "**You have bought the `{}` badge for `{}`.**".format(
+                                        name, badge_info["price"]
+                                    )
+                                )
+                            elif await bank.get_balance(user) < badge_info["price"]:
+                                await ctx.send(
+                                    "**Not enough money! Need `{}` more.**".format(
+                                        badge_info["price"] - await bank.get_balance(user)
+                                    )
+                                )
                 else:
-                    await ctx.send('**{}, you already have this badge!**'.format(user.name))
+                    await ctx.send("**{}, you already have this badge!**".format(user.name))
             else:
                 await ctx.send(
-                    '**The badge `{}` does not exist. (try `{}badge available`)**'.format(name, ctx.prefix))
+                    "**The badge `{}` does not exist. (try `{}badge available`)**".format(
+                        name, ctx.prefix
+                    )
+                )
         else:
-            await ctx.send('**There are no badges to get! (try `{}badge get [name] -global`).**'.format(ctx.prefix))
+            await ctx.send(
+                "**There are no badges to get! (try `{}badge get [name] -global`).**".format(
+                    ctx.prefix
+                )
+            )
 
     @badge.command(name="set")
     @commands.guild_only()
@@ -1406,37 +1515,39 @@ class Leveler(commands.Cog):
         server = ctx.guild
         await self._create_user(user, server)
 
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         userinfo = self._badge_convert_dict(userinfo)
 
         if priority_num < -1 or priority_num > 5000:
             await ctx.send("**Invalid priority number! -1 to 5000.**")
             return
 
-        for badge in userinfo['badges']:
-            if userinfo['badges'][badge]['badge_name'] == name:
-                userinfo['badges'][badge]['priority_num'] = priority_num
-                db.users.update_one({'user_id': userinfo['user_id']}, {'$set': {
-                    "badges": userinfo['badges'],
-                }})
+        for badge in userinfo["badges"]:
+            if userinfo["badges"][badge]["badge_name"] == name:
+                userinfo["badges"][badge]["priority_num"] = priority_num
+                db.users.update_one(
+                    {"user_id": userinfo["user_id"]}, {"$set": {"badges": userinfo["badges"]}}
+                )
                 await ctx.send(
-                    "**The `{}` badge priority has been set to `{}`!**".format(userinfo['badges'][badge]['badge_name'],
-                                                                               priority_num))
+                    "**The `{}` badge priority has been set to `{}`!**".format(
+                        userinfo["badges"][badge]["badge_name"], priority_num
+                    )
+                )
                 break
         else:
             await ctx.send("**You don't have that badge!**")
 
     def _badge_convert_dict(self, userinfo):
-        if 'badges' not in userinfo or not isinstance(userinfo['badges'], dict):
-            db.users.update_one({'user_id': userinfo['user_id']}, {'$set': {
-                "badges": {},
-            }})
-        return db.users.find_one({'user_id': userinfo['user_id']})
+        if "badges" not in userinfo or not isinstance(userinfo["badges"], dict):
+            db.users.update_one({"user_id": userinfo["user_id"]}, {"$set": {"badges": {}}})
+        return db.users.find_one({"user_id": userinfo["user_id"]})
 
     @checks.mod_or_permissions(manage_roles=True)
     @badge.command(name="add")
     @commands.guild_only()
-    async def addbadge(self, ctx, name: str, bg_img: str, border_color: str, price: int, *, description: str):
+    async def addbadge(
+        self, ctx, name: str, bg_img: str, border_color: str, price: int, *, description: str
+    ):
         """Add a badge. 
         name = "Use Quotes", Colors = #hex. bg_img = url, price = -1(non-purchasable), 0(free), or credit amount"""
 
@@ -1451,18 +1562,21 @@ class Leveler(commands.Cog):
             pass
         elif members < required_members:
             await ctx.send(
-                "**You may only add badges in servers with {}+ non-bot members**".format(required_members))
+                "**You may only add badges in servers with {}+ non-bot members**".format(
+                    required_members
+                )
+            )
             return
 
-        if '-global' in description and user.id == self.bot.owner_id:
-            description = description.replace('-global', '')
-            serverid = 'global'
-            servername = 'global'
+        if "-global" in description and user.id == self.bot.owner_id:
+            description = description.replace("-global", "")
+            serverid = "global"
+            servername = "global"
         else:
             serverid = server.id
             servername = server.name
 
-        if '.' in name:
+        if "." in name:
             await ctx.send("**Name cannot contain `.`**")
             return
 
@@ -1482,11 +1596,10 @@ class Leveler(commands.Cog):
             await ctx.send("**Description is too long! <=40**")
             return
 
-        badges = db.badges.find_one({'server_id': str(serverid)})
+        badges = db.badges.find_one({"server_id": str(serverid)})
         if not badges:
-            db.badges.insert_one({'server_id': str(serverid),
-                                  'badges': {}})
-            badges = db.badges.find_one({'server_id': str(serverid)})
+            db.badges.insert_one({"server_id": str(serverid), "badges": {}})
+            badges = db.badges.find_one({"server_id": str(serverid)})
 
         new_badge = {
             "badge_name": name,
@@ -1496,37 +1609,37 @@ class Leveler(commands.Cog):
             "border_color": border_color,
             "server_id": str(serverid),
             "server_name": servername,
-            "priority_num": 0
+            "priority_num": 0,
         }
 
-        if name not in badges['badges'].keys():
+        if name not in badges["badges"].keys():
             # create the badge regardless
-            badges['badges'][name] = new_badge
-            db.badges.update_one({'server_id': str(serverid)}, {'$set': {
-                'badges': badges['badges']
-            }})
+            badges["badges"][name] = new_badge
+            db.badges.update_one(
+                {"server_id": str(serverid)}, {"$set": {"badges": badges["badges"]}}
+            )
             await ctx.send("**`{}` badge added in `{}` server.**".format(name, servername))
         else:
             # update badge in the server
-            badges['badges'][name] = new_badge
-            db.badges.update_one({'server_id': serverid}, {'$set': {
-                'badges': badges['badges']
-            }})
+            badges["badges"][name] = new_badge
+            db.badges.update_one({"server_id": serverid}, {"$set": {"badges": badges["badges"]}})
 
             # go though all users and update the badge.
             # Doing it this way because dynamic does more accesses when doing profile
             for user in db.users.find({}):
                 try:
                     user = self._badge_convert_dict(user)
-                    userbadges = user['badges']
+                    userbadges = user["badges"]
                     badge_name = "{}_{}".format(name, serverid)
                     if badge_name in userbadges.keys():
-                        user_priority_num = userbadges[badge_name]['priority_num']
-                        new_badge['priority_num'] = user_priority_num  # maintain old priority number set by user
+                        user_priority_num = userbadges[badge_name]["priority_num"]
+                        new_badge[
+                            "priority_num"
+                        ] = user_priority_num  # maintain old priority number set by user
                         userbadges[badge_name] = new_badge
-                        db.users.update_one({'user_id': user['user_id']}, {'$set': {
-                            'badges': userbadges
-                        }})
+                        db.users.update_one(
+                            {"user_id": user["user_id"]}, {"$set": {"badges": userbadges}}
+                        )
                 except:
                     pass
             await ctx.send("**The `{}` badge has been updated**".format(name))
@@ -1548,7 +1661,7 @@ class Leveler(commands.Cog):
         if color is not None and len(color) != 4 and len(color) != 7:
             return False
 
-        reg_ex = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
+        reg_ex = r"^#(?:[0-9a-fA-F]{3}){1,2}$"
         return re.search(reg_ex, str(color))
 
     @checks.mod_or_permissions(manage_roles=True)
@@ -1559,9 +1672,9 @@ class Leveler(commands.Cog):
         user = ctx.author
         server = ctx.guild
 
-        if '-global' in name and user.id == self.bot.owner_id:
-            name = name.replace(' -global', '')
-            serverid = 'global'
+        if "-global" in name and user.id == self.bot.owner_id:
+            name = name.replace(" -global", "")
+            serverid = "global"
         else:
             serverid = server.id
 
@@ -1572,12 +1685,13 @@ class Leveler(commands.Cog):
             await ctx.send("Leveler commands for this server are disabled.")
             return
 
-        serverbadges = db.badges.find_one({'server_id': str(serverid)})
-        if name in serverbadges['badges'].keys():
-            del serverbadges['badges'][name]
-            db.badges.update_one({'server_id': serverbadges['server_id']}, {'$set': {
-                "badges": serverbadges["badges"],
-            }})
+        serverbadges = db.badges.find_one({"server_id": str(serverid)})
+        if name in serverbadges["badges"].keys():
+            del serverbadges["badges"][name]
+            db.badges.update_one(
+                {"server_id": serverbadges["server_id"]},
+                {"$set": {"badges": serverbadges["badges"]}},
+            )
 
             await ctx.send("**The `{}` badge has been removed.**".format(name))
         else:
@@ -1586,27 +1700,27 @@ class Leveler(commands.Cog):
     @checks.mod_or_permissions(manage_roles=True)
     @badge.command()
     @commands.guild_only()
-    async def give(self, ctx, user: discord.Member, name: str, global_badge:str = None):
+    async def give(self, ctx, user: discord.Member, name: str, global_badge: str = None):
         """Give a user a badge. Use -global for a global badge."""
         org_user = ctx.message.author
         server = ctx.guild
 
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         userinfo = self._badge_convert_dict(userinfo)
 
         if await self.config.guild(server).disabled():
             await ctx.send("Leveler commands for this server are disabled.")
             return
 
-        if global_badge == '-global':
-            badgeserver = 'global'
+        if global_badge == "-global":
+            badgeserver = "global"
         else:
             badgeserver = ctx.guild.id
-        serverbadges = db.badges.find_one({'server_id': str(badgeserver)})
+        serverbadges = db.badges.find_one({"server_id": str(badgeserver)})
         if serverbadges:
-            badges = serverbadges['badges']
+            badges = serverbadges["badges"]
         else:
             badges = None
         badge_name = "{}_{}".format(name, server.id)
@@ -1620,8 +1734,14 @@ class Leveler(commands.Cog):
         else:
             try:
                 userinfo["badges"][badge_name] = badges[name]
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
-                await ctx.send("**{} has just given {} the `{}` badge!**".format(await self._is_mention(org_user), await self._is_mention(user), name))
+                db.users.update_one(
+                    {"user_id": str(user.id)}, {"$set": {"badges": userinfo["badges"]}}
+                )
+                await ctx.send(
+                    "**{} has just given {} the `{}` badge!**".format(
+                        await self._is_mention(org_user), await self._is_mention(user), name
+                    )
+                )
             except KeyError:
                 await ctx.send("**That badge doesn't exist in this server!**")
 
@@ -1634,15 +1754,15 @@ class Leveler(commands.Cog):
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         userinfo = self._badge_convert_dict(userinfo)
 
         if await self.config.guild(server).disabled():
             await ctx.send("Leveler commands for this server are disabled.")
             return
 
-        serverbadges = db.badges.find_one({'server_id': str(server.id)})
-        badges = serverbadges['badges']
+        serverbadges = db.badges.find_one({"server_id": str(server.id)})
+        badges = serverbadges["badges"]
         badge_name = "{}_{}".format(name, server.id)
 
         if name not in badges:
@@ -1651,80 +1771,89 @@ class Leveler(commands.Cog):
             await ctx.send("**{} does not have that badge!**".format(await self._is_mention(user)))
         else:
             del userinfo["badges"][badge_name]
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
+            db.users.update_one(
+                {"user_id": str(user.id)}, {"$set": {"badges": userinfo["badges"]}}
+            )
             await ctx.send(
-                "**{} has taken the `{}` badge from {}! :upside_down:**".format(await self._is_mention(org_user),
-                                                                                name,
-                                                                                await self._is_mention(user)))
+                "**{} has taken the `{}` badge from {}! :upside_down:**".format(
+                    await self._is_mention(org_user), name, await self._is_mention(user)
+                )
+            )
 
     @checks.mod_or_permissions(manage_roles=True)
-    @badge.command(name='link')
+    @badge.command(name="link")
     @commands.guild_only()
     async def linkbadge(self, ctx, badge_name: str, level: int):
         """Associate a badge with a level."""
         server = ctx.guild
-        serverbadges = db.badges.find_one({'server_id': str(server.id)})
+        serverbadges = db.badges.find_one({"server_id": str(server.id)})
 
         if serverbadges is None:
             await ctx.send("**This server does not have any badges!**")
             return
 
-        if badge_name not in serverbadges['badges'].keys():
+        if badge_name not in serverbadges["badges"].keys():
             await ctx.send("**Please make sure the `{}` badge exists!**".format(badge_name))
             return
         else:
-            server_linked_badges = db.badgelinks.find_one({'server_id': str(server.id)})
+            server_linked_badges = db.badgelinks.find_one({"server_id": str(server.id)})
             if not server_linked_badges:
-                new_server = {
-                    'server_id': str(server.id),
-                    'badges': {
-                        badge_name: str(level)
-                    }
-                }
+                new_server = {"server_id": str(server.id), "badges": {badge_name: str(level)}}
                 db.badgelinks.insert_one(new_server)
             else:
-                server_linked_badges['badges'][badge_name] = str(level)
-                db.badgelinks.update_one({'server_id': str(server.id)},
-                                         {'$set': {'badges': server_linked_badges['badges']}})
-            await ctx.send("**The `{}` badge has been linked to level `{}`.**".format(badge_name, level))
+                server_linked_badges["badges"][badge_name] = str(level)
+                db.badgelinks.update_one(
+                    {"server_id": str(server.id)},
+                    {"$set": {"badges": server_linked_badges["badges"]}},
+                )
+            await ctx.send(
+                "**The `{}` badge has been linked to level `{}`.**".format(badge_name, level)
+            )
 
     @checks.admin_or_permissions(manage_roles=True)
-    @badge.command(name='unlink')
+    @badge.command(name="unlink")
     @commands.guild_only()
     async def unlinkbadge(self, ctx, *, badge_name: str):
         """Unlink a badge/level association."""
         server = ctx.guild
 
-        server_linked_badges = db.badgelinks.find_one({'server_id': str(server.id)})
-        badge_links = server_linked_badges['badges']
+        server_linked_badges = db.badgelinks.find_one({"server_id": str(server.id)})
+        badge_links = server_linked_badges["badges"]
 
         if badge_name in badge_links.keys():
             await ctx.send(
-                "**Badge/Level association `{}`/`{}` removed.**".format(badge_name, badge_links[badge_name]))
+                "**Badge/Level association `{}`/`{}` removed.**".format(
+                    badge_name, badge_links[badge_name]
+                )
+            )
             del badge_links[badge_name]
-            db.badgelinks.update_one({'server_id': str(server.id)}, {'$set': {'badges': badge_links}})
+            db.badgelinks.update_one(
+                {"server_id": str(server.id)}, {"$set": {"badges": badge_links}}
+            )
         else:
             await ctx.send("**The `{}` badge is not linked to any levels!**".format(badge_name))
 
     @checks.mod_or_permissions(manage_roles=True)
-    @badge.command(name='listlinks')
+    @badge.command(name="listlinks")
     @commands.guild_only()
     async def listbadge(self, ctx):
         """List badge/level associations."""
         server = ctx.guild
 
-        server_badges = db.badgelinks.find_one({'server_id': str(server.id)})
+        server_badges = db.badgelinks.find_one({"server_id": str(server.id)})
 
         em = discord.Embed(colour=await ctx.embed_color())
-        em.set_author(name="Current Badge - Level Links for {}".format(server.name), icon_url=server.icon_url)
+        em.set_author(
+            name="Current Badge - Level Links for {}".format(server.name), icon_url=server.icon_url
+        )
 
-        if server_badges is None or 'badges' not in server_badges or server_badges['badges'] == {}:
-            msg = 'None'
+        if server_badges is None or "badges" not in server_badges or server_badges["badges"] == {}:
+            msg = "None"
         else:
-            badges = server_badges['badges']
-            msg = '**Badge** → Level\n'
+            badges = server_badges["badges"]
+            msg = "**Badge** → Level\n"
             for badge in badges.keys():
-                msg += '**• {} →** {}\n'.format(badge, badges[badge])
+                msg += "**• {} →** {}\n".format(badge, badges[badge])
 
         em.description = msg
         await ctx.send(embed=em)
@@ -1735,7 +1864,7 @@ class Leveler(commands.Cog):
         """Role configuration."""
         pass
 
-    @role.command(name='link')
+    @role.command(name="link")
     @commands.guild_only()
     async def linkrole(self, ctx, role_name: str, level: int, remove_role=None):
         """Associate a role with a level. Removes previous role if given."""
@@ -1748,77 +1877,84 @@ class Leveler(commands.Cog):
                 await ctx.send("**Please make sure the `{}` role exists!**".format(role_name))
             else:
                 await ctx.send(
-                    "**Please make sure the `{}` and/or `{}` roles exist!**".format(role_name, remove_role))
+                    "**Please make sure the `{}` and/or `{}` roles exist!**".format(
+                        role_name, remove_role
+                    )
+                )
         else:
-            server_roles = db.roles.find_one({'server_id': str(server.id)})
+            server_roles = db.roles.find_one({"server_id": str(server.id)})
             if not server_roles:
                 new_server = {
-                    'server_id': str(server.id),
-                    'roles': {
-                        role_name: {
-                            'level': str(level),
-                            'remove_role': remove_role
-                        }
-                    }
+                    "server_id": str(server.id),
+                    "roles": {role_name: {"level": str(level), "remove_role": remove_role}},
                 }
                 db.roles.insert_one(new_server)
             else:
-                if role_name not in server_roles['roles']:
-                    server_roles['roles'][role_name] = {}
+                if role_name not in server_roles["roles"]:
+                    server_roles["roles"][role_name] = {}
 
-                server_roles['roles'][role_name]['level'] = str(level)
-                server_roles['roles'][role_name]['remove_role'] = remove_role
-                db.roles.update_one({'server_id': str(server.id)}, {'$set': {'roles': server_roles['roles']}})
+                server_roles["roles"][role_name]["level"] = str(level)
+                server_roles["roles"][role_name]["remove_role"] = remove_role
+                db.roles.update_one(
+                    {"server_id": str(server.id)}, {"$set": {"roles": server_roles["roles"]}}
+                )
 
             if remove_role is None:
-                await ctx.send("**The `{}` role has been linked to level `{}`**".format(role_name, level))
+                await ctx.send(
+                    "**The `{}` role has been linked to level `{}`**".format(role_name, level)
+                )
             else:
                 await ctx.send(
                     "**The `{}` role has been linked to level `{}`. "
-                    "Will also remove `{}` role.**".format(role_name, level, remove_role))
+                    "Will also remove `{}` role.**".format(role_name, level, remove_role)
+                )
 
-
-    @role.command(name='unlink')
+    @role.command(name="unlink")
     @commands.guild_only()
     async def unlinkrole(self, ctx, *, role_name: str):
         """Unlink a role/level association."""
         server = ctx.guild
 
-        server_roles = db.roles.find_one({'server_id': str(server.id)})
-        roles = server_roles['roles']
+        server_roles = db.roles.find_one({"server_id": str(server.id)})
+        roles = server_roles["roles"]
 
         if role_name in roles:
             await ctx.send(
-                "**Role/Level association `{}`/`{}` removed.**".format(role_name, roles[role_name]['level']))
+                "**Role/Level association `{}`/`{}` removed.**".format(
+                    role_name, roles[role_name]["level"]
+                )
+            )
             del roles[role_name]
-            db.roles.update_one({'server_id': str(server.id)}, {'$set': {'roles': roles}})
+            db.roles.update_one({"server_id": str(server.id)}, {"$set": {"roles": roles}})
         else:
             await ctx.send("**The `{}` role is not linked to any levels!**".format(role_name))
 
-
-    @role.command(name='listlinks')
+    @role.command(name="listlinks")
     @commands.guild_only()
     async def listrole(self, ctx):
         """List role/level associations."""
         server = ctx.guild
         user = ctx.author
 
-        server_roles = db.roles.find_one({'server_id': str(server.id)})
+        server_roles = db.roles.find_one({"server_id": str(server.id)})
 
         em = discord.Embed(colour=await ctx.embed_color())
-        em.set_author(name="Current Role - Level Links for {}".format(server.name), icon_url=server.icon_url)
+        em.set_author(
+            name="Current Role - Level Links for {}".format(server.name), icon_url=server.icon_url
+        )
 
-        if server_roles is None or 'roles' not in server_roles or server_roles['roles'] == {}:
-            msg = 'None'
+        if server_roles is None or "roles" not in server_roles or server_roles["roles"] == {}:
+            msg = "None"
         else:
-            roles = server_roles['roles']
-            msg = '**Role** → Level\n'
+            roles = server_roles["roles"]
+            msg = "**Role** → Level\n"
             for role in roles:
-                if roles[role]['remove_role'] is not None:
-                    msg += '**• {} →** {} (Removes: {})\n'.format(role, roles[role]['level'],
-                                                                  roles[role]['remove_role'])
+                if roles[role]["remove_role"] is not None:
+                    msg += "**• {} →** {} (Removes: {})\n".format(
+                        role, roles[role]["level"], roles[role]["remove_role"]
+                    )
                 else:
-                    msg += '**• {} →** {}\n'.format(role, roles[role]['level'])
+                    msg += "**• {} →** {}\n".format(role, roles[role]["level"])
 
         em.description = msg
         await ctx.send(embed=em)
@@ -1878,15 +2014,15 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def setcustombg(self, ctx, bg_type: str, user_id: str, img_url: str):
         """Set one-time custom background"""
-        valid_types = ['profile', 'rank', 'levelup']
+        valid_types = ["profile", "rank", "levelup"]
         type_input = bg_type.lower()
 
         if type_input not in valid_types:
-            await ctx.send('**Please choose a valid type: `profile`, `rank`, `levelup`.')
+            await ctx.send("**Please choose a valid type: `profile`, `rank`, `levelup`.")
             return
 
         # test if valid user_id
-        userinfo = db.users.find_one({'user_id': str(user_id)})
+        userinfo = db.users.find_one({"user_id": str(user_id)})
         if not userinfo:
             await ctx.send("**That is not a valid user id!**")
             return
@@ -1895,7 +2031,9 @@ class Leveler(commands.Cog):
             await ctx.send("**That is not a valid image url!**")
             return
 
-        db.users.update_one({'user_id': str(user_id)}, {'$set': {"{}_background".format(type_input): img_url}})
+        db.users.update_one(
+            {"user_id": str(user_id)}, {"$set": {"{}_background".format(type_input): img_url}}
+        )
         await ctx.send("**User {} custom {} background set.**".format(user_id, bg_type))
 
     @checks.is_owner()
@@ -1908,7 +2046,9 @@ class Leveler(commands.Cog):
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
-            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
+            return await ctx.send(
+                "**The profile background (`{}`) has been deleted.**".format(name)
+            )
 
     @checks.is_owner()
     @lvladminbg.command()
@@ -1920,7 +2060,9 @@ class Leveler(commands.Cog):
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
-            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
+            return await ctx.send(
+                "**The profile background (`{}`) has been deleted.**".format(name)
+            )
 
     @checks.is_owner()
     @lvladminbg.command()
@@ -1932,9 +2074,11 @@ class Leveler(commands.Cog):
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
-            return await ctx.send("**The profile background (`{}`) has been deleted.**".format(name))
+            return await ctx.send(
+                "**The profile background (`{}`) has been deleted.**".format(name)
+            )
 
-    @commands.command(name='backgrounds')
+    @commands.command(name="backgrounds")
     @commands.guild_only()
     async def disp_backgrounds(self, ctx, bg_type):
         """Gives a list of backgrounds. [p]backgrounds [profile|rank|levelup]"""
@@ -1947,16 +2091,22 @@ class Leveler(commands.Cog):
 
         em = discord.Embed(colour=await ctx.embed_color())
         if bg_type.lower() == "profile":
-            em.set_author(name="Profile Backgrounds for {}".format(self.bot.user.name),
-                          icon_url=self.bot.user.avatar_url)
+            em.set_author(
+                name="Profile Backgrounds for {}".format(self.bot.user.name),
+                icon_url=self.bot.user.avatar_url,
+            )
             bg_key = "profile"
         elif bg_type.lower() == "rank":
-            em.set_author(name="Rank Backgrounds for {}".format(self.bot.user.name),
-                          icon_url=self.bot.user.avatar_url)
+            em.set_author(
+                name="Rank Backgrounds for {}".format(self.bot.user.name),
+                icon_url=self.bot.user.avatar_url,
+            )
             bg_key = "rank"
         elif bg_type.lower() == "levelup":
-            em.set_author(name="Level Up Backgrounds for {}".format(self.bot.user.name),
-                          icon_url=self.bot.user.avatar_url)
+            em.set_author(
+                name="Level Up Backgrounds for {}".format(self.bot.user.name),
+                icon_url=self.bot.user.avatar_url,
+            )
             bg_key = "levelup"
         else:
             bg_key = None
@@ -1966,10 +2116,12 @@ class Leveler(commands.Cog):
             total = len(backgrounds[bg_key])
             cnt = 1
             for bg in sorted(backgrounds[bg_key].keys()):
-                em = discord.Embed(title=bg,
-                                   color=await ctx.embed_color(),
-                                   url=backgrounds[bg_key][bg],
-                                   description=f"Background {cnt}/{total}")
+                em = discord.Embed(
+                    title=bg,
+                    color=await ctx.embed_color(),
+                    url=backgrounds[bg_key][bg],
+                    description=f"Background {cnt}/{total}",
+                )
                 em.set_image(url=backgrounds[bg_key][bg])
                 embeds.append(em)
                 cnt += 1
@@ -2001,14 +2153,14 @@ class Leveler(commands.Cog):
 
             for char in text:
                 if char.isalnum() or char in string.punctuation or char in string.whitespace:
-                    draw.text((write_pos, y), u"{}".format(char), font=font, fill=fill)
+                    draw.text((write_pos, y), "{}".format(char), font=font, fill=fill)
                     write_pos += font.getsize(char)[0]
                 else:
-                    draw.text((write_pos, y), u"{}".format(char), font=unicode_font, fill=fill)
+                    draw.text((write_pos, y), "{}".format(char), font=unicode_font, fill=fill)
                     write_pos += unicode_font.getsize(char)[0]
 
         # get urls
-        userinfo = db.users.find_one({'user_id':str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         self._badge_convert_dict(userinfo)
         bg_url = userinfo["profile_background"]
         profile_url = user.avatar_url
@@ -2019,7 +2171,7 @@ class Leveler(commands.Cog):
 
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_profile_bg.png', 'wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png", "wb") as f:
             f.write(image)
         try:
             async with self.session.get(profile_url) as r:
@@ -2027,27 +2179,31 @@ class Leveler(commands.Cog):
         except:
             async with self.session.get(default_avatar_url) as r:
                 image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_level_profile.png', 'wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_level_profile.png", "wb") as f:
             f.write(image)
 
-        bg_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_profile_bg.png').convert('RGBA')
-        profile_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_level_profile.png').convert('RGBA')
+        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png").convert(
+            "RGBA"
+        )
+        profile_image = Image.open(
+            f"{cog_data_path(self)}/{user.id}_temp_level_profile.png"
+        ).convert("RGBA")
 
         # set canvas
-        bg_color = (255,255,255,0)
-        result = Image.new('RGBA', (290, 290), bg_color)
-        process = Image.new('RGBA', (290, 290), bg_color)
+        bg_color = (255, 255, 255, 0)
+        result = Image.new("RGBA", (290, 290), bg_color)
+        process = Image.new("RGBA", (290, 290), bg_color)
 
         # draw
         draw = ImageDraw.Draw(process)
 
         # puts in background
         bg_image = bg_image.resize((290, 290), Image.ANTIALIAS)
-        bg_image = bg_image.crop((0,0, 290, 290))
-        result.paste(bg_image, (0,0))
+        bg_image = bg_image.crop((0, 0, 290, 290))
+        result.paste(bg_image, (0, 0))
 
         # draw filter
-        draw.rectangle([(0,0),(290, 290)], fill=(0,0,0,10))
+        draw.rectangle([(0, 0), (290, 290)], fill=(0, 0, 0, 10))
 
         # draw transparent overlay
         vert_pos = 110
@@ -2058,30 +2214,34 @@ class Leveler(commands.Cog):
 
         # determines rep section color
         if "rep_color" not in userinfo.keys() or not userinfo["rep_color"]:
-            rep_fill = (92,130,203,230)
+            rep_fill = (92, 130, 203, 230)
         else:
             rep_fill = tuple(userinfo["rep_color"])
         # determines badge section color, should be behind the titlebar
         if "badge_col_color" not in userinfo.keys() or not userinfo["badge_col_color"]:
-            badge_fill = (128,151,165,230)
+            badge_fill = (128, 151, 165, 230)
         else:
             badge_fill = tuple(userinfo["badge_col_color"])
 
         if "profile_info_color" in userinfo.keys():
             info_color = tuple(userinfo["profile_info_color"])
         else:
-            info_color = (30, 30 ,30, 220)
+            info_color = (30, 30, 30, 220)
 
-        draw.rectangle([(left_pos - 20, vert_pos + title_height), (right_pos, 156)], fill=info_color) # title box
-        draw.rectangle([(100,159), (285, 212)], fill=info_color) # general content
-        draw.rectangle([(100,215), (285, 285)], fill=info_color) # info content
+        draw.rectangle(
+            [(left_pos - 20, vert_pos + title_height), (right_pos, 156)], fill=info_color
+        )  # title box
+        draw.rectangle([(100, 159), (285, 212)], fill=info_color)  # general content
+        draw.rectangle([(100, 215), (285, 285)], fill=info_color)  # info content
 
         # stick in credits if needed
         # if bg_url in bg_credits.keys():
-            # credit_text = "  ".join("Background by {}".format(bg_credits[bg_url]))
-            # credit_init = 290 - credit_fnt.getsize(credit_text)[0]
-            # draw.text((credit_init, 0), credit_text,  font=credit_fnt, fill=(0,0,0,100))
-        draw.rectangle([(5, vert_pos), (right_pos, vert_pos + title_height)], fill=(230,230,230,230)) # name box in front
+        # credit_text = "  ".join("Background by {}".format(bg_credits[bg_url]))
+        # credit_init = 290 - credit_fnt.getsize(credit_text)[0]
+        # draw.text((credit_init, 0), credit_text,  font=credit_fnt, fill=(0,0,0,100))
+        draw.rectangle(
+            [(5, vert_pos), (right_pos, vert_pos + title_height)], fill=(230, 230, 230, 230)
+        )  # name box in front
 
         # draw level circle
         multiplier = 8
@@ -2091,35 +2251,54 @@ class Leveler(commands.Cog):
         raw_length = lvl_circle_dia * multiplier
 
         # create mask
-        mask = Image.new('L', (raw_length, raw_length), 0)
+        mask = Image.new("L", (raw_length, raw_length), 0)
         draw_thumb = ImageDraw.Draw(mask)
-        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill = 255, outline = 0)
+        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill=255, outline=0)
 
         # drawing level bar calculate angle
-        start_angle = -90 # from top instead of 3oclock
-        angle = int(360 * (userinfo["servers"][str(server.id)]["current_exp"]/self._required_exp(userinfo["servers"][str(server.id)]["level"]))) + start_angle
+        start_angle = -90  # from top instead of 3oclock
+        angle = (
+            int(
+                360
+                * (
+                    userinfo["servers"][str(server.id)]["current_exp"]
+                    / self._required_exp(userinfo["servers"][str(server.id)]["level"])
+                )
+            )
+            + start_angle
+        )
 
         # level outline
         lvl_circle = Image.new("RGBA", (raw_length, raw_length))
         draw_lvl_circle = ImageDraw.Draw(lvl_circle)
-        draw_lvl_circle.ellipse([0, 0, raw_length, raw_length], fill=(badge_fill[0], badge_fill[1], badge_fill[2], 180), outline = (255, 255, 255, 250))
+        draw_lvl_circle.ellipse(
+            [0, 0, raw_length, raw_length],
+            fill=(badge_fill[0], badge_fill[1], badge_fill[2], 180),
+            outline=(255, 255, 255, 250),
+        )
         # determines exp bar color
         if "profile_exp_color" not in userinfo.keys() or not userinfo["profile_exp_color"]:
             exp_fill = (255, 255, 255, 230)
         else:
             exp_fill = tuple(userinfo["profile_exp_color"])
-        draw_lvl_circle.pieslice([0, 0, raw_length, raw_length], start_angle, angle, fill=exp_fill, outline = (255, 255, 255, 255))
+        draw_lvl_circle.pieslice(
+            [0, 0, raw_length, raw_length],
+            start_angle,
+            angle,
+            fill=exp_fill,
+            outline=(255, 255, 255, 255),
+        )
         # put on level bar circle
         lvl_circle = lvl_circle.resize((lvl_circle_dia, lvl_circle_dia), Image.ANTIALIAS)
         lvl_bar_mask = mask.resize((lvl_circle_dia, lvl_circle_dia), Image.ANTIALIAS)
         process.paste(lvl_circle, (circle_left, circle_top), lvl_bar_mask)
 
         # draws boxes
-        draw.rectangle([(5,133), (100, 285)], fill= badge_fill) # badges
-        draw.rectangle([(10,138), (95, 168)], fill = rep_fill) # reps
+        draw.rectangle([(5, 133), (100, 285)], fill=badge_fill)  # badges
+        draw.rectangle([(10, 138), (95, 168)], fill=rep_fill)  # reps
 
         total_gap = 10
-        border = int(total_gap/2)
+        border = int(total_gap / 2)
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
@@ -2130,30 +2309,57 @@ class Leveler(commands.Cog):
         process.paste(profile_image, (circle_left + border, circle_top + border), mask)
 
         # write label text
-        white_color = (240,240,240,255)
-        light_color = (160,160,160,255)
+        white_color = (240, 240, 240, 255)
+        light_color = (160, 160, 160, 255)
 
         head_align = 105
-        _write_unicode(self._truncate_text(self._name(user, 22), 22), head_align, vert_pos + 3, level_label_fnt, header_u_fnt, (110,110,110,255)) # NAME
-        _write_unicode(userinfo["title"], head_align, 136, level_label_fnt, header_u_fnt, white_color)
+        _write_unicode(
+            self._truncate_text(self._name(user, 22), 22),
+            head_align,
+            vert_pos + 3,
+            level_label_fnt,
+            header_u_fnt,
+            (110, 110, 110, 255),
+        )  # NAME
+        _write_unicode(
+            userinfo["title"], head_align, 136, level_label_fnt, header_u_fnt, white_color
+        )
 
         # draw level box
         level_right = 290
         level_left = level_right - 78
-        draw.rectangle([(level_left, 0), (level_right, 21)], fill=(badge_fill[0],badge_fill[1],badge_fill[2],160)) # box
+        draw.rectangle(
+            [(level_left, 0), (level_right, 21)],
+            fill=(badge_fill[0], badge_fill[1], badge_fill[2], 160),
+        )  # box
         lvl_text = "LEVEL {}".format(userinfo["servers"][str(server.id)]["level"])
-        if badge_fill == (128,151,165,230):
+        if badge_fill == (128, 151, 165, 230):
             lvl_color = white_color
         else:
             lvl_color = self._contrast(badge_fill, rep_fill, exp_fill)
-        draw.text((self._center(level_left+2, level_right, lvl_text, level_label_fnt), 2), lvl_text,  font=level_label_fnt, fill=(lvl_color[0],lvl_color[1],lvl_color[2],255)) # Level #
+        draw.text(
+            (self._center(level_left + 2, level_right, lvl_text, level_label_fnt), 2),
+            lvl_text,
+            font=level_label_fnt,
+            fill=(lvl_color[0], lvl_color[1], lvl_color[2], 255),
+        )  # Level #
 
         rep_text = "{} REP".format(userinfo["rep"])
-        draw.text((self._center(7, 100, rep_text, rep_fnt), 144), rep_text, font=rep_fnt, fill=white_color)
+        draw.text(
+            (self._center(7, 100, rep_text, rep_fnt), 144),
+            rep_text,
+            font=rep_fnt,
+            fill=white_color,
+        )
 
-        exp_text = "{}/{}".format(userinfo["servers"][str(server.id)]["current_exp"],self._required_exp(userinfo["servers"][str(server.id)]["level"])) # Exp
+        exp_text = "{}/{}".format(
+            userinfo["servers"][str(server.id)]["current_exp"],
+            self._required_exp(userinfo["servers"][str(server.id)]["level"]),
+        )  # Exp
         exp_color = exp_fill
-        draw.text((105, 99), exp_text,  font=exp_fnt, fill=(exp_color[0], exp_color[1], exp_color[2], 255)) # Exp Text
+        draw.text(
+            (105, 99), exp_text, font=exp_fnt, fill=(exp_color[0], exp_color[1], exp_color[2], 255)
+        )  # Exp Text
 
         # determine info text color
         dark_text = (35, 35, 35, 230)
@@ -2161,42 +2367,73 @@ class Leveler(commands.Cog):
 
         lvl_left = 100
         label_align = 105
-        _write_unicode(u"Rank:", label_align, 165, general_info_fnt, general_info_u_fnt, info_text_color)
-        draw.text((label_align, 180), "Exp:",  font=general_info_fnt, fill=info_text_color) # Exp
-        draw.text((label_align, 195), "Credits:",  font=general_info_fnt, fill=info_text_color) # Credits
+        _write_unicode(
+            "Rank:", label_align, 165, general_info_fnt, general_info_u_fnt, info_text_color
+        )
+        draw.text((label_align, 180), "Exp:", font=general_info_fnt, fill=info_text_color)  # Exp
+        draw.text(
+            (label_align, 195), "Credits:", font=general_info_fnt, fill=info_text_color
+        )  # Credits
 
         # local stats
         num_local_align = 172
-        local_symbol = u"\U0001F3E0 "
+        local_symbol = "\U0001F3E0 "
         if "linux" in platform.system().lower():
-            local_symbol = u"\U0001F3E0 "
+            local_symbol = "\U0001F3E0 "
         else:
             local_symbol = "S "
 
-        s_rank_txt = local_symbol + self._truncate_text("#{}".format(await self._find_server_rank(user, server)), 8)
-        _write_unicode(s_rank_txt, num_local_align - general_info_u_fnt.getsize(local_symbol)[0], 165, general_info_fnt, general_info_u_fnt, info_text_color) # Rank
+        s_rank_txt = local_symbol + self._truncate_text(
+            "#{}".format(await self._find_server_rank(user, server)), 8
+        )
+        _write_unicode(
+            s_rank_txt,
+            num_local_align - general_info_u_fnt.getsize(local_symbol)[0],
+            165,
+            general_info_fnt,
+            general_info_u_fnt,
+            info_text_color,
+        )  # Rank
 
         s_exp_txt = self._truncate_text("{}".format(await self._find_server_exp(user, server)), 8)
-        _write_unicode(s_exp_txt, num_local_align, 180, general_info_fnt, general_info_u_fnt, info_text_color)  # Exp
+        _write_unicode(
+            s_exp_txt, num_local_align, 180, general_info_fnt, general_info_u_fnt, info_text_color
+        )  # Exp
         credits = await bank.get_balance(user)
         credit_txt = "${}".format(credits)
-        draw.text((num_local_align, 195), self._truncate_text(credit_txt, 18),  font=general_info_fnt, fill=info_text_color) # Credits
+        draw.text(
+            (num_local_align, 195),
+            self._truncate_text(credit_txt, 18),
+            font=general_info_fnt,
+            fill=info_text_color,
+        )  # Credits
 
         # global stats
         num_align = 230
         if "linux" in platform.system().lower():
-            global_symbol = u"\U0001F30E "
+            global_symbol = "\U0001F30E "
             fine_adjust = 1
         else:
             global_symbol = "G "
             fine_adjust = 0
 
-        rank_txt = global_symbol + self._truncate_text("#{}".format(await self._find_global_rank(user)), 8)
+        rank_txt = global_symbol + self._truncate_text(
+            "#{}".format(await self._find_global_rank(user)), 8
+        )
         exp_txt = self._truncate_text("{}".format(userinfo["total_exp"]), 8)
-        _write_unicode(rank_txt, num_align - general_info_u_fnt.getsize(global_symbol)[0] + fine_adjust, 165, general_info_fnt, general_info_u_fnt, info_text_color) # Rank
-        _write_unicode(exp_txt, num_align, 180, general_info_fnt, general_info_u_fnt, info_text_color)  # Exp
+        _write_unicode(
+            rank_txt,
+            num_align - general_info_u_fnt.getsize(global_symbol)[0] + fine_adjust,
+            165,
+            general_info_fnt,
+            general_info_u_fnt,
+            info_text_color,
+        )  # Rank
+        _write_unicode(
+            exp_txt, num_align, 180, general_info_fnt, general_info_u_fnt, info_text_color
+        )  # Exp
 
-        draw.text((105, 220), "Info Box",  font=sub_header_fnt, fill=white_color) # Info Box
+        draw.text((105, 220), "Info Box", font=sub_header_fnt, fill=white_color)  # Info Box
         margin = 105
         offset = 238
         for line in textwrap.wrap(userinfo["info"], width=42):
@@ -2207,8 +2444,8 @@ class Leveler(commands.Cog):
         # sort badges
         priority_badges = []
 
-        for badgename in userinfo['badges'].keys():
-            badge = userinfo['badges'][badgename]
+        for badgename in userinfo["badges"].keys():
+            badge = userinfo["badges"][badgename]
             priority_num = badge["priority_num"]
             if priority_num != 0 and priority_num != -1:
                 priority_badges.append((badge, priority_num))
@@ -2222,58 +2459,85 @@ class Leveler(commands.Cog):
             left = 9 + right_shift
             right = 52 + right_shift
             size = 27
-            total_gap = 4 # /2
+            total_gap = 4  # /2
             hor_gap = 3
             vert_gap = 2
-            border_width = int(total_gap/2)
+            border_width = int(total_gap / 2)
             mult = [
-                (0,0), (1,0), (2,0),
-                (0,1), (1,1), (2,1),
-                (0,2), (1,2), (2,2),
-                (0,3), (1,3), (2,3),
-                ]
+                (0, 0),
+                (1, 0),
+                (2, 0),
+                (0, 1),
+                (1, 1),
+                (2, 1),
+                (0, 2),
+                (1, 2),
+                (2, 2),
+                (0, 3),
+                (1, 3),
+                (2, 3),
+            ]
             i = 0
             for pair in sorted_badges[:12]:
                 try:
-                    coord = (left + int(mult[i][0])*int(hor_gap+size), vert_pos + int(mult[i][1])*int(vert_gap + size))
+                    coord = (
+                        left + int(mult[i][0]) * int(hor_gap + size),
+                        vert_pos + int(mult[i][1]) * int(vert_gap + size),
+                    )
                     badge = pair[0]
                     bg_color = badge["bg_img"]
                     border_color = badge["border_color"]
-                    multiplier = 6 # for antialiasing
+                    multiplier = 6  # for antialiasing
                     raw_length = size * multiplier
 
                     # draw mask circle
-                    mask = Image.new('L', (raw_length, raw_length), 0)
+                    mask = Image.new("L", (raw_length, raw_length), 0)
                     draw_thumb = ImageDraw.Draw(mask)
-                    draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill = 255, outline = 0)
+                    draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill=255, outline=0)
 
                     # determine image or color for badge bg
                     if await self._valid_image_url(bg_color):
                         # get image
                         async with self.session.get(bg_color) as r:
                             image = await r.content.read()
-                        with open(f'{cog_data_path(self)}/{user.id}_temp_badge.png','wb') as f:
+                        with open(f"{cog_data_path(self)}/{user.id}_temp_badge.png", "wb") as f:
                             f.write(image)
-                        badge_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_badge.png').convert('RGBA')
+                        badge_image = Image.open(
+                            f"{cog_data_path(self)}/{user.id}_temp_badge.png"
+                        ).convert("RGBA")
                         badge_image = badge_image.resize((raw_length, raw_length), Image.ANTIALIAS)
 
                         # structured like this because if border = 0, still leaves outline.
                         if border_color:
-                            square = Image.new('RGBA', (raw_length, raw_length), border_color)
+                            square = Image.new("RGBA", (raw_length, raw_length), border_color)
                             # put border on ellipse/circle
-                            output = ImageOps.fit(square, (raw_length, raw_length), centering=(0.5, 0.5))
+                            output = ImageOps.fit(
+                                square, (raw_length, raw_length), centering=(0.5, 0.5)
+                            )
                             output = output.resize((size, size), Image.ANTIALIAS)
                             outer_mask = mask.resize((size, size), Image.ANTIALIAS)
                             process.paste(output, coord, outer_mask)
 
                             # put on ellipse/circle
-                            output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
-                            output = output.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
-                            inner_mask = mask.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
-                            process.paste(output, (coord[0] + border_width, coord[1] + border_width), inner_mask)
+                            output = ImageOps.fit(
+                                badge_image, (raw_length, raw_length), centering=(0.5, 0.5)
+                            )
+                            output = output.resize(
+                                (size - total_gap, size - total_gap), Image.ANTIALIAS
+                            )
+                            inner_mask = mask.resize(
+                                (size - total_gap, size - total_gap), Image.ANTIALIAS
+                            )
+                            process.paste(
+                                output,
+                                (coord[0] + border_width, coord[1] + border_width),
+                                inner_mask,
+                            )
                         else:
                             # put on ellipse/circle
-                            output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
+                            output = ImageOps.fit(
+                                badge_image, (raw_length, raw_length), centering=(0.5, 0.5)
+                            )
                             output = output.resize((size, size), Image.ANTIALIAS)
                             outer_mask = mask.resize((size, size), Image.ANTIALIAS)
                             process.paste(output, coord, outer_mask)
@@ -2281,7 +2545,7 @@ class Leveler(commands.Cog):
                     pass
                 # attempt to remove badge image
                 try:
-                    os.remove(f'{cog_data_path(self)}/{user.id}_temp_badge.png')
+                    os.remove(f"{cog_data_path(self)}/{user.id}_temp_badge.png")
                 except:
                     pass
                 i += 1
@@ -2295,42 +2559,54 @@ class Leveler(commands.Cog):
                 left_pos = 10
                 right_pos = 95
                 total_gap = 4
-                border_width = int(total_gap/2)
+                border_width = int(total_gap / 2)
                 bar_size = (85, 15)
 
                 # determine image or color for badge bg
                 if await self._valid_image_url(bg_color):
                     async with self.session.get(bg_color) as r:
                         image = await r.content.read()
-                    with open(f'{cog_data_path(self)}/{user.id}_temp_badge.png','wb') as f:
+                    with open(f"{cog_data_path(self)}/{user.id}_temp_badge.png", "wb") as f:
                         f.write(image)
-                    badge_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_badge.png').convert('RGBA')
+                    badge_image = Image.open(
+                        f"{cog_data_path(self)}/{user.id}_temp_badge.png"
+                    ).convert("RGBA")
 
                     if border_color != None:
-                        draw.rectangle([(left_pos, vert_pos + i*17), (right_pos, vert_pos + 15 + i*17)], fill = border_color, outline = border_color) # border
-                        badge_image = badge_image.resize((bar_size[0] - total_gap + 1, bar_size[1] - total_gap + 1), Image.ANTIALIAS)
-                        process.paste(badge_image, (left_pos + border_width, vert_pos + border_width + i*17))
+                        draw.rectangle(
+                            [(left_pos, vert_pos + i * 17), (right_pos, vert_pos + 15 + i * 17)],
+                            fill=border_color,
+                            outline=border_color,
+                        )  # border
+                        badge_image = badge_image.resize(
+                            (bar_size[0] - total_gap + 1, bar_size[1] - total_gap + 1),
+                            Image.ANTIALIAS,
+                        )
+                        process.paste(
+                            badge_image,
+                            (left_pos + border_width, vert_pos + border_width + i * 17),
+                        )
                     else:
                         badge_image = badge_image.resize(bar_size, Image.ANTIALIAS)
-                        process.paste(badge_image, (left_pos,vert_pos + i*17))
+                        process.paste(badge_image, (left_pos, vert_pos + i * 17))
                     try:
-                        os.remove(f'{cog_data_path(self)}/{user.id}_temp_badge.png')
+                        os.remove(f"{cog_data_path(self)}/{user.id}_temp_badge.png")
                     except:
                         pass
 
-                vert_pos += 3 # spacing
+                vert_pos += 3  # spacing
                 i += 1
 
         result = Image.alpha_composite(result, process)
-        result.save(f'{cog_data_path(self)}/{user.id}_profile.png','PNG', quality=100)
+        result.save(f"{cog_data_path(self)}/{user.id}_profile.png", "PNG", quality=100)
 
         # remove images
         try:
-            os.remove(f'{cog_data_path(self)}/{user.id}_temp_profile_bg.png')
+            os.remove(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png")
         except:
             pass
         try:
-            os.remove(f'{cog_data_path(self)}/{user.id}_temp_profile_bg.png')
+            os.remove(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png")
         except:
             pass
 
@@ -2345,26 +2621,32 @@ class Leveler(commands.Cog):
 
     def _luminance(self, color):
         # convert to greyscale
-        luminance = float((0.2126*color[0]) + (0.7152*color[1]) + (0.0722*color[2]))
+        luminance = float((0.2126 * color[0]) + (0.7152 * color[1]) + (0.0722 * color[2]))
         return luminance
 
     def _contrast_ratio(self, bgcolor, foreground):
-        f_lum = float(self._luminance(foreground)+0.05)
-        bg_lum = float(self._luminance(bgcolor)+0.05)
+        f_lum = float(self._luminance(foreground) + 0.05)
+        bg_lum = float(self._luminance(bgcolor) + 0.05)
 
         if bg_lum > f_lum:
-            return bg_lum/f_lum
+            return bg_lum / f_lum
         else:
-            return f_lum/bg_lum
+            return f_lum / bg_lum
 
     # returns a string with possibly a nickname
     def _name(self, user, max_length):
         if user.name == user.display_name:
             return user.name
         else:
-            return "{} ({})".format(user.name, self._truncate_text(user.display_name, max_length - len(user.name) - 3), max_length)
+            return "{} ({})".format(
+                user.name,
+                self._truncate_text(user.display_name, max_length - len(user.name) - 3),
+                max_length,
+            )
 
-    async def _add_dropshadow(self, image, offset=(4, 4), background=0x000, shadow=0x0F0, border=3, iterations=5):
+    async def _add_dropshadow(
+        self, image, offset=(4, 4), background=0x000, shadow=0x0F0, border=3, iterations=5
+    ):
         totalWidth = image.size[0] + abs(offset[0]) + 2 * border
         totalHeight = image.size[1] + abs(offset[1]) + 2 * border
         back = Image.new(image.mode, (totalWidth, totalHeight), background)
@@ -2372,7 +2654,9 @@ class Leveler(commands.Cog):
         # Place the shadow, taking into account the offset from the image
         shadowLeft = border + max(offset[0], 0)
         shadowTop = border + max(offset[1], 0)
-        back.paste(shadow, [shadowLeft, shadowTop, shadowLeft + image.size[0], shadowTop + image.size[1]])
+        back.paste(
+            shadow, [shadowLeft, shadowTop, shadowLeft + image.size[0], shadowTop + image.size[1]]
+        )
 
         n = 0
         while n < iterations:
@@ -2408,10 +2692,10 @@ class Leveler(commands.Cog):
                     draw.text((write_pos, y), char, font=font, fill=fill)
                     write_pos += font.getsize(char)[0]
                 else:
-                    draw.text((write_pos, y), u"{}".format(char), font=unicode_font, fill=fill)
+                    draw.text((write_pos, y), "{}".format(char), font=unicode_font, fill=fill)
                     write_pos += unicode_font.getsize(char)[0]
 
-        userinfo = db.users.find_one({'user_id':str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         # get urls
         bg_url = userinfo["rank_background"]
         profile_url = user.avatar_url
@@ -2423,7 +2707,7 @@ class Leveler(commands.Cog):
 
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_rank_bg.png','wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_rank_bg.png", "wb") as f:
             f.write(image)
         try:
             async with self.session.get(profile_url) as r:
@@ -2431,7 +2715,7 @@ class Leveler(commands.Cog):
         except:
             async with self.session.get(default_avatar_url) as r:
                 image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_rank_profile.png','wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_rank_profile.png", "wb") as f:
             f.write(image)
         try:
             async with self.session.get(server_icon_url) as r:
@@ -2439,24 +2723,28 @@ class Leveler(commands.Cog):
         except:
             async with self.session.get(default_avatar_url) as r:
                 image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_server_icon.png','wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_server_icon.png", "wb") as f:
             f.write(image)
 
-        bg_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_rank_bg.png').convert('RGBA')
-        profile_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_rank_profile.png').convert('RGBA')
-        server_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_server_icon.png').convert('RGBA')
+        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_rank_bg.png").convert("RGBA")
+        profile_image = Image.open(
+            f"{cog_data_path(self)}/{user.id}_temp_rank_profile.png"
+        ).convert("RGBA")
+        server_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_server_icon.png").convert(
+            "RGBA"
+        )
 
         # set canvas
         width = 360
         height = 100
-        bg_color = (255,255,255, 0)
-        result = Image.new('RGBA', (width, height), bg_color)
-        process = Image.new('RGBA', (width, height), bg_color)
+        bg_color = (255, 255, 255, 0)
+        result = Image.new("RGBA", (width, height), bg_color)
+        process = Image.new("RGBA", (width, height), bg_color)
 
         # puts in background
         bg_image = bg_image.resize((width, height), Image.ANTIALIAS)
-        bg_image = bg_image.crop((0,0, width, height))
-        result.paste(bg_image, (0,0))
+        bg_image = bg_image.crop((0, 0, width, height))
+        result.paste(bg_image, (0, 0))
 
         # draw
         draw = ImageDraw.Draw(process)
@@ -2468,47 +2756,76 @@ class Leveler(commands.Cog):
         title_height = 22
         gap = 3
 
-        draw.rectangle([(left_pos - 20,vert_pos), (right_pos, vert_pos + title_height)], fill=(230,230,230,230)) # title box
+        draw.rectangle(
+            [(left_pos - 20, vert_pos), (right_pos, vert_pos + title_height)],
+            fill=(230, 230, 230, 230),
+        )  # title box
         content_top = vert_pos + title_height + gap
         content_bottom = 100 - vert_pos
 
         if "rank_info_color" in userinfo.keys():
             info_color = tuple(userinfo["rank_info_color"])
-            info_color = (info_color[0], info_color[1], info_color[2], 160) # increase transparency
+            info_color = (
+                info_color[0],
+                info_color[1],
+                info_color[2],
+                160,
+            )  # increase transparency
         else:
-            info_color = (30, 30 ,30, 160)
-        draw.rectangle([(left_pos - 20, content_top), (right_pos, content_bottom)], fill=info_color, outline=(180, 180, 180, 180)) # content box
+            info_color = (30, 30, 30, 160)
+        draw.rectangle(
+            [(left_pos - 20, content_top), (right_pos, content_bottom)],
+            fill=info_color,
+            outline=(180, 180, 180, 180),
+        )  # content box
 
         # stick in credits if needed
         # if bg_url in bg_credits.keys():
-            # credit_text = " ".join("{}".format(bg_credits[bg_url]))
-            # draw.text((2, 92), credit_text,  font=credit_fnt, fill=(0,0,0,190))
+        # credit_text = " ".join("{}".format(bg_credits[bg_url]))
+        # draw.text((2, 92), credit_text,  font=credit_fnt, fill=(0,0,0,190))
 
         # draw level circle
         multiplier = 6
         lvl_circle_dia = 94
         circle_left = 15
-        circle_top = int((height- lvl_circle_dia)/2)
+        circle_top = int((height - lvl_circle_dia) / 2)
         raw_length = lvl_circle_dia * multiplier
 
         # create mask
-        mask = Image.new('L', (raw_length, raw_length), 0)
+        mask = Image.new("L", (raw_length, raw_length), 0)
         draw_thumb = ImageDraw.Draw(mask)
-        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill = 255, outline = 0)
+        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill=255, outline=0)
 
         # drawing level bar calculate angle
-        start_angle = -90 # from top instead of 3oclock
-        angle = int(360 * (userinfo["servers"][str(server.id)]["current_exp"]/self._required_exp(userinfo["servers"][str(server.id)]["level"]))) + start_angle
+        start_angle = -90  # from top instead of 3oclock
+        angle = (
+            int(
+                360
+                * (
+                    userinfo["servers"][str(server.id)]["current_exp"]
+                    / self._required_exp(userinfo["servers"][str(server.id)]["level"])
+                )
+            )
+            + start_angle
+        )
 
         lvl_circle = Image.new("RGBA", (raw_length, raw_length))
         draw_lvl_circle = ImageDraw.Draw(lvl_circle)
-        draw_lvl_circle.ellipse([0, 0, raw_length, raw_length], fill=(180, 180, 180, 180), outline = (255, 255, 255, 220))
+        draw_lvl_circle.ellipse(
+            [0, 0, raw_length, raw_length], fill=(180, 180, 180, 180), outline=(255, 255, 255, 220)
+        )
         # determines exp bar color
         if "rank_exp_color" not in userinfo.keys() or not userinfo["rank_exp_color"]:
             exp_fill = (255, 255, 255, 230)
         else:
             exp_fill = tuple(userinfo["rank_exp_color"])
-        draw_lvl_circle.pieslice([0, 0, raw_length, raw_length], start_angle, angle, fill=exp_fill, outline = (255, 255, 255, 230))
+        draw_lvl_circle.pieslice(
+            [0, 0, raw_length, raw_length],
+            start_angle,
+            angle,
+            fill=exp_fill,
+            outline=(255, 255, 255, 230),
+        )
         # put on level bar circle
         lvl_circle = lvl_circle.resize((lvl_circle_dia, lvl_circle_dia), Image.ANTIALIAS)
         lvl_bar_mask = mask.resize((lvl_circle_dia, lvl_circle_dia), Image.ANTIALIAS)
@@ -2516,7 +2833,7 @@ class Leveler(commands.Cog):
 
         # draws mask
         total_gap = 10
-        border = int(total_gap/2)
+        border = int(total_gap / 2)
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
@@ -2529,69 +2846,120 @@ class Leveler(commands.Cog):
         # draw level box
         level_left = 274
         level_right = right_pos
-        draw.rectangle([(level_left, vert_pos), (level_right, vert_pos + title_height)], fill="#AAA") # box
+        draw.rectangle(
+            [(level_left, vert_pos), (level_right, vert_pos + title_height)], fill="#AAA"
+        )  # box
         lvl_text = "LEVEL {}".format(userinfo["servers"][str(server.id)]["level"])
-        draw.text((self._center(level_left, level_right, lvl_text, level_label_fnt), vert_pos + 3), lvl_text,  font=level_label_fnt, fill=(110,110,110,255)) # Level #
+        draw.text(
+            (self._center(level_left, level_right, lvl_text, level_label_fnt), vert_pos + 3),
+            lvl_text,
+            font=level_label_fnt,
+            fill=(110, 110, 110, 255),
+        )  # Level #
 
         # labels text colors
-        white_text = (240,240,240,255)
+        white_text = (240, 240, 240, 255)
         dark_text = (35, 35, 35, 230)
         label_text_color = self._contrast(info_color, white_text, dark_text)
 
         # draw text
-        grey_color = (110,110,110,255)
-        white_color = (230,230,230,255)
+        grey_color = (110, 110, 110, 255)
+        white_color = (230, 230, 230, 255)
 
         # put in server picture
         server_size = content_bottom - content_top - 10
         server_border_size = server_size + 4
         radius = 20
-        light_border = (150,150,150,180)
-        dark_border = (90,90,90,180)
+        light_border = (150, 150, 150, 180)
+        dark_border = (90, 90, 90, 180)
         border_color = self._contrast(info_color, light_border, dark_border)
 
-        draw_server_border = Image.new('RGBA', (server_border_size*multiplier, server_border_size*multiplier),border_color)
-        draw_server_border = self._add_corners(draw_server_border, int(radius*multiplier/2))
-        draw_server_border = draw_server_border.resize((server_border_size, server_border_size), Image.ANTIALIAS)
-        server_image = server_image.resize((server_size*multiplier, server_size*multiplier), Image.ANTIALIAS)
-        server_image = self._add_corners(server_image, int(radius*multiplier/2)-10)
+        draw_server_border = Image.new(
+            "RGBA",
+            (server_border_size * multiplier, server_border_size * multiplier),
+            border_color,
+        )
+        draw_server_border = self._add_corners(draw_server_border, int(radius * multiplier / 2))
+        draw_server_border = draw_server_border.resize(
+            (server_border_size, server_border_size), Image.ANTIALIAS
+        )
+        server_image = server_image.resize(
+            (server_size * multiplier, server_size * multiplier), Image.ANTIALIAS
+        )
+        server_image = self._add_corners(server_image, int(radius * multiplier / 2) - 10)
         server_image = server_image.resize((server_size, server_size), Image.ANTIALIAS)
-        process.paste(draw_server_border, (circle_left + profile_size + 2*border + 8, content_top + 3), draw_server_border)
-        process.paste(server_image, (circle_left + profile_size + 2*border + 10, content_top + 5), server_image)
+        process.paste(
+            draw_server_border,
+            (circle_left + profile_size + 2 * border + 8, content_top + 3),
+            draw_server_border,
+        )
+        process.paste(
+            server_image,
+            (circle_left + profile_size + 2 * border + 10, content_top + 5),
+            server_image,
+        )
 
         # name
         left_text_align = 130
-        _write_unicode(self._truncate_text(self._name(user, 20), 20), left_text_align - 12, vert_pos + 3, name_fnt, header_u_fnt, grey_color) # Name
+        _write_unicode(
+            self._truncate_text(self._name(user, 20), 20),
+            left_text_align - 12,
+            vert_pos + 3,
+            name_fnt,
+            header_u_fnt,
+            grey_color,
+        )  # Name
 
         # divider bar
-        draw.rectangle([(187, 45), (188, 85)], fill=(160,160,160,220))
+        draw.rectangle([(187, 45), (188, 85)], fill=(160, 160, 160, 220))
 
         # labels
         label_align = 200
-        draw.text((label_align, 38), "Server Rank:", font=general_info_fnt, fill=label_text_color) # Server Rank
-        draw.text((label_align, 58), "Server Exp:", font=general_info_fnt, fill=label_text_color) # Server Exp
-        draw.text((label_align, 78), "Credits:", font=general_info_fnt, fill=label_text_color) # Credit
+        draw.text(
+            (label_align, 38), "Server Rank:", font=general_info_fnt, fill=label_text_color
+        )  # Server Rank
+        draw.text(
+            (label_align, 58), "Server Exp:", font=general_info_fnt, fill=label_text_color
+        )  # Server Exp
+        draw.text(
+            (label_align, 78), "Credits:", font=general_info_fnt, fill=label_text_color
+        )  # Credit
         # info
         right_text_align = 290
         rank_txt = "#{}".format(await self._find_server_rank(user, server))
-        draw.text((right_text_align, 38), self._truncate_text(rank_txt, 12) , font=general_info_fnt, fill=label_text_color) # Rank
+        draw.text(
+            (right_text_align, 38),
+            self._truncate_text(rank_txt, 12),
+            font=general_info_fnt,
+            fill=label_text_color,
+        )  # Rank
         exp_txt = "{}".format(await self._find_server_exp(user, server))
-        draw.text((right_text_align, 58), self._truncate_text(exp_txt, 12), font=general_info_fnt, fill=label_text_color) # Exp
+        draw.text(
+            (right_text_align, 58),
+            self._truncate_text(exp_txt, 12),
+            font=general_info_fnt,
+            fill=label_text_color,
+        )  # Exp
         credits = await bank.get_balance(user)
         credit_txt = "${}".format(credits)
-        draw.text((right_text_align, 78), self._truncate_text(credit_txt, 12),  font=general_info_fnt, fill=label_text_color) # Credits
+        draw.text(
+            (right_text_align, 78),
+            self._truncate_text(credit_txt, 12),
+            font=general_info_fnt,
+            fill=label_text_color,
+        )  # Credits
 
         result = Image.alpha_composite(result, process)
-        result.save(f'{cog_data_path(self)}/{user.id}_rank.png','PNG', quality=100)
+        result.save(f"{cog_data_path(self)}/{user.id}_rank.png", "PNG", quality=100)
 
     def _add_corners(self, im, rad, multiplier=6):
         raw_length = rad * 2 * multiplier
-        circle = Image.new('L', (raw_length, raw_length), 0)
+        circle = Image.new("L", (raw_length, raw_length), 0)
         draw = ImageDraw.Draw(circle)
         draw.ellipse((0, 0, raw_length, raw_length), fill=255)
         circle = circle.resize((rad * 2, rad * 2), Image.ANTIALIAS)
 
-        alpha = Image.new('L', im.size, 255)
+        alpha = Image.new("L", im.size, 255)
         w, h = im.size
         alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
         alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
@@ -2602,7 +2970,7 @@ class Leveler(commands.Cog):
 
     async def draw_levelup(self, user, server):
         font_bold_file = f"{bundled_data_path(self)}/font_bold.ttf"
-        userinfo = db.users.find_one({'user_id':str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
         # get urls
         bg_url = userinfo["levelup_background"]
         profile_url = user.avatar_url
@@ -2613,7 +2981,7 @@ class Leveler(commands.Cog):
 
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_level_bg.png','wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_level_bg.png", "wb") as f:
             f.write(image)
         try:
             async with self.session.get(profile_url) as r:
@@ -2621,53 +2989,62 @@ class Leveler(commands.Cog):
         except:
             async with self.session.get(default_avatar_url) as r:
                 image = await r.content.read()
-        with open(f'{cog_data_path(self)}/{user.id}_temp_level_profile.png','wb') as f:
+        with open(f"{cog_data_path(self)}/{user.id}_temp_level_profile.png", "wb") as f:
             f.write(image)
 
-        bg_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_level_bg.png').convert('RGBA')
-        profile_image = Image.open(f'{cog_data_path(self)}/{user.id}_temp_level_profile.png').convert('RGBA')
+        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_level_bg.png").convert("RGBA")
+        profile_image = Image.open(
+            f"{cog_data_path(self)}/{user.id}_temp_level_profile.png"
+        ).convert("RGBA")
 
         # set canvas
         width = 175
         height = 65
-        bg_color = (255,255,255, 0)
-        result = Image.new('RGBA', (width, height), bg_color)
-        process = Image.new('RGBA', (width, height), bg_color)
+        bg_color = (255, 255, 255, 0)
+        result = Image.new("RGBA", (width, height), bg_color)
+        process = Image.new("RGBA", (width, height), bg_color)
 
         # draw
         draw = ImageDraw.Draw(process)
 
         # puts in background
         bg_image = bg_image.resize((width, height), Image.ANTIALIAS)
-        bg_image = bg_image.crop((0,0, width, height))
-        result.paste(bg_image, (0,0))
+        bg_image = bg_image.crop((0, 0, width, height))
+        result.paste(bg_image, (0, 0))
 
         # draw transparent overlay
         if "levelup_info_color" in userinfo.keys():
             info_color = tuple(userinfo["levelup_info_color"])
-            info_color = (info_color[0], info_color[1], info_color[2], 150) # increase transparency
+            info_color = (
+                info_color[0],
+                info_color[1],
+                info_color[2],
+                150,
+            )  # increase transparency
         else:
-            info_color = (30, 30 ,30, 150)
-        draw.rectangle([(38, 5), (170, 60)], fill=info_color) # info portion
+            info_color = (30, 30, 30, 150)
+        draw.rectangle([(38, 5), (170, 60)], fill=info_color)  # info portion
 
         # draw level circle
         multiplier = 6
         lvl_circle_dia = 60
         circle_left = 4
-        circle_top = int((height- lvl_circle_dia)/2)
+        circle_top = int((height - lvl_circle_dia) / 2)
         raw_length = lvl_circle_dia * multiplier
 
         # create mask
-        mask = Image.new('L', (raw_length, raw_length), 0)
+        mask = Image.new("L", (raw_length, raw_length), 0)
         draw_thumb = ImageDraw.Draw(mask)
-        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill = 255, outline = 0)
+        draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill=255, outline=0)
 
         # drawing level bar calculate angle
-        start_angle = -90 # from top instead of 3oclock
+        start_angle = -90  # from top instead of 3oclock
 
         lvl_circle = Image.new("RGBA", (raw_length, raw_length))
         draw_lvl_circle = ImageDraw.Draw(lvl_circle)
-        draw_lvl_circle.ellipse([0, 0, raw_length, raw_length], fill=(255, 255, 255, 220), outline = (255, 255, 255, 220))
+        draw_lvl_circle.ellipse(
+            [0, 0, raw_length, raw_length], fill=(255, 255, 255, 220), outline=(255, 255, 255, 220)
+        )
 
         # put on level bar circle
         lvl_circle = lvl_circle.resize((lvl_circle_dia, lvl_circle_dia), Image.ANTIALIAS)
@@ -2676,7 +3053,7 @@ class Leveler(commands.Cog):
 
         # draws mask
         total_gap = 6
-        border = int(total_gap/2)
+        border = int(total_gap / 2)
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
@@ -2691,15 +3068,20 @@ class Leveler(commands.Cog):
         level_fnt = ImageFont.truetype(font_bold_file, 26)
 
         # write label text
-        white_text = (240,240,240,255)
+        white_text = (240, 240, 240, 255)
         dark_text = (35, 35, 35, 230)
         level_up_text = self._contrast(info_color, white_text, dark_text)
         lvl_text = "LEVEL {}".format(userinfo["servers"][str(server.id)]["level"])
-        draw.text((self._center(50, 170, lvl_text, level_fnt), 22), lvl_text, font=level_fnt, fill=level_up_text) # Level Number
+        draw.text(
+            (self._center(50, 170, lvl_text, level_fnt), 22),
+            lvl_text,
+            font=level_fnt,
+            fill=level_up_text,
+        )  # Level Number
 
         result = Image.alpha_composite(result, process)
-        filename = f'{cog_data_path(self)}/{user.id}_level.png'
-        result.save(filename,'PNG', quality=100)
+        filename = f"{cog_data_path(self)}/{user.id}_level.png"
+        result.save(filename, "PNG", quality=100)
 
     async def _handle_on_message(self, message):
         text = message.content
@@ -2710,7 +3092,7 @@ class Leveler(commands.Cog):
         # creates user if doesn't exist, bots are not logged.
         await self._create_user(user, server)
         curr_time = time.time()
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         if not server or await self.config.guild(server).disabled():
             return
@@ -2723,11 +3105,15 @@ class Leveler(commands.Cog):
 
         if "last_message" not in userinfo:
             userinfo["last_message"] = 0
-        if all([float(curr_time) - float(userinfo["chat_block"]) >= 120,
+        if all(
+            [
+                float(curr_time) - float(userinfo["chat_block"]) >= 120,
                 not any(text.startswith(x) for x in prefix),
                 len(message.content) > 10,
                 message.content != userinfo["last_message"],
-                message.channel.id not in await self.config.guild(server).ignored_channels()]):
+                message.channel.id not in await self.config.guild(server).ignored_channels(),
+            ]
+        ):
             await self._process_exp(message, userinfo, random.randint(15, 20))
             await self._give_chat_credit(user, server)
 
@@ -2738,25 +3124,45 @@ class Leveler(commands.Cog):
         # add to total exp
         required = self._required_exp(userinfo["servers"][str(server.id)]["level"])
         try:
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "total_exp": userinfo["total_exp"] + exp,
-            }})
+            db.users.update_one(
+                {"user_id": str(user.id)}, {"$set": {"total_exp": userinfo["total_exp"] + exp}}
+            )
         except:
             pass
         if userinfo["servers"][str(server.id)]["current_exp"] + exp >= required:
             userinfo["servers"][str(server.id)]["level"] += 1
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "servers.{}.level".format(server.id): userinfo["servers"][str(server.id)]["level"],
-                "servers.{}.current_exp".format(server.id): userinfo["servers"][str(server.id)][
-                                                                "current_exp"] + exp - required,
-                "chat_block": time.time(), "last_message": message.content
-            }})
+            db.users.update_one(
+                {"user_id": str(user.id)},
+                {
+                    "$set": {
+                        "servers.{}.level".format(server.id): userinfo["servers"][str(server.id)][
+                            "level"
+                        ],
+                        "servers.{}.current_exp".format(server.id): userinfo["servers"][
+                            str(server.id)
+                        ]["current_exp"]
+                        + exp
+                        - required,
+                        "chat_block": time.time(),
+                        "last_message": message.content,
+                    }
+                },
+            )
             await self._handle_levelup(user, userinfo, server, channel)
         else:
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                "servers.{}.current_exp".format(server.id): userinfo["servers"][str(server.id)]["current_exp"] + exp,
-                "chat_block": time.time(), "last_message": message.content
-            }})
+            db.users.update_one(
+                {"user_id": str(user.id)},
+                {
+                    "$set": {
+                        "servers.{}.current_exp".format(server.id): userinfo["servers"][
+                            str(server.id)
+                        ]["current_exp"]
+                        + exp,
+                        "chat_block": time.time(),
+                        "last_message": message.content,
+                    }
+                },
+            )
 
     async def _handle_levelup(self, user, userinfo, server, channel):
         if await self.config.guild(server).lvl_msg():  # if lvl msg is enabled
@@ -2774,55 +3180,75 @@ class Leveler(commands.Cog):
                 name = "You"
 
             new_level = str(userinfo["servers"][str(server.id)]["level"])
-            server_roles = db.roles.find_one({'server_id': str(server.id)})
+            server_roles = db.roles.find_one({"server_id": str(server.id)})
             if server_roles is not None:
-                for role in server_roles['roles'].keys():
-                    if int(server_roles['roles'][role]['level']) == int(new_level):
+                for role in server_roles["roles"].keys():
+                    if int(server_roles["roles"][role]["level"]) == int(new_level):
                         add_role = discord.utils.get(server.roles, name=role)
                         if add_role is not None:
                             try:
                                 await user.add_roles(add_role, reason="Levelup")
                             except discord.Forbidden:
-                                await channel.send("Levelup role adding failed: Missing Permissions")
+                                await channel.send(
+                                    "Levelup role adding failed: Missing Permissions"
+                                )
                             except discord.HTTPException:
                                 await channel.send("Levelup role adding failed")
-                        remove_role = discord.utils.get(server.roles, name=server_roles['roles'][role]['remove_role'])
+                        remove_role = discord.utils.get(
+                            server.roles, name=server_roles["roles"][role]["remove_role"]
+                        )
                         if remove_role is not None:
                             try:
                                 await user.remove_roles(remove_role, reason="Levelup")
                             except discord.Forbidden:
-                                await channel.send("Levelup role removal failed: Missing Permissions")
+                                await channel.send(
+                                    "Levelup role removal failed: Missing Permissions"
+                                )
                             except discord.HTTPException:
                                 await channel.send("Levelup role removal failed")
                         # await user.edit(roles=new_roles, reason="Levelup")
 
             # add appropriate badge if necessary
             try:
-                server_linked_badges = db.badgelinks.find_one({'server_id': str(server.id)})
+                server_linked_badges = db.badgelinks.find_one({"server_id": str(server.id)})
                 if server_linked_badges is not None:
-                    for badge_name in server_linked_badges['badges']:
-                        if int(server_linked_badges['badges'][badge_name]) == int(new_level):
-                            server_badges = db.badges.find_one({'server_id': str(server.id)})
-                            if server_badges is not None and badge_name in server_badges['badges'].keys():
-                                userinfo_db = db.users.find_one({'user_id': str(user.id)})
+                    for badge_name in server_linked_badges["badges"]:
+                        if int(server_linked_badges["badges"][badge_name]) == int(new_level):
+                            server_badges = db.badges.find_one({"server_id": str(server.id)})
+                            if (
+                                server_badges is not None
+                                and badge_name in server_badges["badges"].keys()
+                            ):
+                                userinfo_db = db.users.find_one({"user_id": str(user.id)})
                                 new_badge_name = "{}_{}".format(badge_name, server.id)
-                                userinfo_db["badges"][new_badge_name] = server_badges['badges'][badge_name]
-                                db.users.update_one({'user_id': str(user.id)},
-                                                    {'$set': {"badges": userinfo_db["badges"]}})
+                                userinfo_db["badges"][new_badge_name] = server_badges["badges"][
+                                    badge_name
+                                ]
+                                db.users.update_one(
+                                    {"user_id": str(user.id)},
+                                    {"$set": {"badges": userinfo_db["badges"]}},
+                                )
             except:
-                await channel.send('Error. Badge was not given!')
+                await channel.send("Error. Badge was not given!")
 
             if await self.config.guild(server).text_only():
                 await self.bot.send_typing(channel)
                 em = discord.Embed(
-                    description='**{} just gained a level{}! (LEVEL {})**'.format(name, server_identifier, new_level),
-                    colour=user.colour)
+                    description="**{} just gained a level{}! (LEVEL {})**".format(
+                        name, server_identifier, new_level
+                    ),
+                    colour=user.colour,
+                )
                 channel.send(embed=em)
             else:
                 async with channel.typing():
                     await self.draw_levelup(user, server)
-                    file = discord.File(f'{cog_data_path(self)}/{user.id}_level.png', filename="levelup.png")
-                    await channel.send('**{} just gained a level{}!**'.format(name, server_identifier), file=file)
+                    file = discord.File(
+                        f"{cog_data_path(self)}/{user.id}_level.png", filename="levelup.png"
+                    )
+                    await channel.send(
+                        "**{} just gained a level{}!**".format(name, server_identifier), file=file
+                    )
             self.bot.dispatch("leveler_levelup", user, new_level)
 
     async def _find_server_rank(self, user, server):
@@ -2866,7 +3292,7 @@ class Leveler(commands.Cog):
 
     async def _find_server_exp(self, user, server):
         server_exp = 0
-        userinfo = db.users.find_one({'user_id': str(user.id)})
+        userinfo = db.users.find_one({"user_id": str(user.id)})
 
         try:
             for i in range(userinfo["servers"][str(server.id)]["level"]):
@@ -2916,7 +3342,7 @@ class Leveler(commands.Cog):
         if user.bot:
             return
         try:
-            userinfo = db.users.find_one({'user_id': str(user.id)})
+            userinfo = db.users.find_one({"user_id": str(user.id)})
             if not userinfo:
                 new_account = {
                     "user_id": str(user.id),
@@ -2937,31 +3363,37 @@ class Leveler(commands.Cog):
                     "chat_block": 0,
                     "last_message": "",
                     "profile_block": 0,
-                    "rank_block": 0
+                    "rank_block": 0,
                 }
                 db.users.insert_one(new_account)
 
-            userinfo = db.users.find_one({'user_id': str(user.id)})
+            userinfo = db.users.find_one({"user_id": str(user.id)})
 
             if "username" not in userinfo or userinfo["username"] != user.name:
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "username": user.name,
-                }}, upsert=True)
+                db.users.update_one(
+                    {"user_id": str(user.id)}, {"$set": {"username": user.name}}, upsert=True
+                )
 
             if "servers" not in userinfo or str(server.id) not in userinfo["servers"]:
-                db.users.update_one({'user_id': str(user.id)}, {'$set': {
-                    "servers.{}.level".format(server.id): 0,
-                    "servers.{}.current_exp".format(server.id): 0,
-                }}, upsert=True)
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "servers.{}.level".format(server.id): 0,
+                            "servers.{}.current_exp".format(server.id): 0,
+                        }
+                    },
+                    upsert=True,
+                )
         except AttributeError:
             pass
 
     def _truncate_text(self, text, max_length):
         if len(text) > max_length:
-            if text.strip('$').isdigit():
-                text = int(text.strip('$'))
+            if text.strip("$").isdigit():
+                text = int(text.strip("$"))
                 return "${:.2E}".format(text)
-            return text[:max_length - 3] + "..."
+            return text[: max_length - 3] + "..."
         return text
 
     # finds the the pixel to center the text
@@ -2985,7 +3417,7 @@ class Leveler(commands.Cog):
         return int((1 / 278) * (9 + math.sqrt(81 + 1112 * total_exp)))
 
     def char_in_font(self, unicode_char, font):
-        for cmap in font['cmap'].tables:
+        for cmap in font["cmap"].tables:
             if cmap.isUnicode():
                 if ord(unicode_char) in cmap.cmap:
                     return True
