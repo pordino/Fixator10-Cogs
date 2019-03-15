@@ -1618,12 +1618,12 @@ class Leveler(commands.Cog):
             await ctx.send("**{} already has that badge!**".format(await self._is_mention(user)))
             return
         else:
-            userinfo["badges"][badge_name] = badges[name]
-            db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
-            await ctx.send(
-                "**{} has just given {} the `{}` badge!**".format(await self._is_mention(org_user),
-                                                                    await self._is_mention(user),
-                                                                    name))
+            try:
+                userinfo["badges"][badge_name] = badges[name]
+                db.users.update_one({'user_id': str(user.id)}, {'$set': {"badges": userinfo["badges"]}})
+                await ctx.send("**{} has just given {} the `{}` badge!**".format(await self._is_mention(org_user), await self._is_mention(user), name))
+            except KeyError:
+                await ctx.send("**That badge doesn't exist in this server!**")
 
     @checks.mod_or_permissions(manage_roles=True)
     @badge.command()
