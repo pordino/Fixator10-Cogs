@@ -1347,18 +1347,21 @@ class Leveler(commands.Cog):
             server_badge_info = db.badges.find_one({"server_id": str(serverid)})
             if server_badge_info:
                 server_badges = server_badge_info["badges"]
-                for badgename in server_badges:
-                    badgeinfo = server_badges[badgename]
-                    if badgeinfo["price"] == -1:
-                        price = "Non-purchasable"
-                    elif badgeinfo["price"] == 0:
-                        price = "Free"
-                    else:
-                        price = badgeinfo["price"]
+                if len(server_badges) >= 1:
+                    for badgename in server_badges:
+                        badgeinfo = server_badges[badgename]
+                        if badgeinfo["price"] == -1:
+                            price = "Non-purchasable"
+                        elif badgeinfo["price"] == 0:
+                            price = "Free"
+                        else:
+                            price = badgeinfo["price"]
 
-                    msg += "**• {}** ({}) - {}\n".format(
-                        badgename, price, badgeinfo["description"]
-                    )
+                        msg += "**• {}** ({}) - {}\n".format(
+                            badgename, price, badgeinfo["description"]
+                        )
+                else:
+                    msg = "None"
             else:
                 msg = "None"
 
