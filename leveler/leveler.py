@@ -1152,7 +1152,6 @@ class Leveler(commands.Cog):
         user = ctx.author
         server = ctx.guild
         bg_price = await self.config.bg_price()
-
         if bg_price != 0:
             if not await bank.can_spend(user, bg_price):
                 await ctx.send(
@@ -1167,15 +1166,16 @@ class Leveler(commands.Cog):
                 )
                 pred = MessagePredicate.yes_or_no(ctx)
                 try:
-                    await self.bot.wait_for("message", timeout=15, check=pred)
+                    await self.bot.wait_for("message", check=pred, timeout=15)
                 except TimeoutError:
-                    pass
-                if not pred:
                     await ctx.send("**Purchase canceled.**")
                     return False
-                else:
+                if pred.result is True:
                     await bank.withdraw_credits(user, bg_price)
                     return True
+                else:
+                    await ctx.send("**Purchase canceled.**")
+                    return False
         else:
             return True
 
@@ -1468,10 +1468,10 @@ class Leveler(commands.Cog):
                         )
                         pred = MessagePredicate.yes_or_no(ctx)
                         try:
-                            await self.bot.wait_for("message", timeout=15, check=pred)
+                            await self.bot.wait_for("message", check=pred, timeout=15)
                         except TimeoutError:
-                            pass
-                        if not pred:
+                            return await ctx.send("**Purchase canceled.**")
+                        if pred.result is False:
                             await ctx.send("**Purchase canceled.**")
                             return
                         else:
