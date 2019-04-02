@@ -48,6 +48,7 @@ class Leveler(commands.Cog):
             "badge_type": "circles",
             "removed_backgrounds": {"profile": [], "rank": [], "levelup": []},
             "backgrounds": {"profile": {}, "rank": {}, "levelup": {}},
+            "xp": [15, 20],
         }
         default_guild = {
             "disabled": False,
@@ -1319,6 +1320,26 @@ class Leveler(commands.Cog):
         else:
             await self.config.guild(server).private_lvl_message.set(True)
             await ctx.send("**Private level-up alerts enabled for `{}`.**".format(server.name))
+
+    @lvladmin.command()
+    @checks.is_owner()
+    async def xp(self, ctx, min_xp:int = None, max_xp:int = None):
+        """Set the range for the xp given on each successful xp gain.
+        Leaving the entries blank will reset the xp to the default."""
+        if not (min_xp and max_xp):
+            await self.config.xp.set([15, 20])
+            return await ctx.send("XP given has been reset to the default range of 15-20 xp per message.")
+        elif not max_xp:
+            return await ctx.send(f"Enter the values as a range: `{ctx.prefix}lvladmin xp 15 20`")
+        elif (max_xp or min_xp) > 1000:
+            return await ctx.send("Don't you think that number is a bit high? That might break things. Try something under 1k xp.")
+        elif min_xp >= max_xp:
+            return await ctx.send("The minimum xp amount needs to be less than the maximum xp amount.")
+        elif (min_xp or max_xp) <= 0:
+            return await ctx.send("The xp amounts can't be zero or less.") 
+        else:
+            await self.config.xp.set([min_xp, max_xp])
+            await ctx.send(f"XP given has been set to a range of {min_xp} to {max_xp} xp per message.")
 
     @commands.group()
     async def badge(self, ctx):
@@ -3117,7 +3138,8 @@ class Leveler(commands.Cog):
                 message.channel.id not in await self.config.guild(server).ignored_channels(),
             ]
         ):
-            await self._process_exp(message, userinfo, random.randint(15, 20))
+            xp = await self.config.xp()
+            await self._process_exp(message, userinfo, random.randint(xp[0], xp[1]))
             await self._give_chat_credit(user, server)
 
     async def _process_exp(self, message, userinfo, exp: int):
