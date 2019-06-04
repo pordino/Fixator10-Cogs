@@ -5,6 +5,7 @@
   "install_msg": "Thanks for install.",
   "short": "This cog shows SMM-related data",
   "description": "This cog shows Super Mario Maker-related data. You can check levels and level designers",
+  "hidden": true,
   "tags": [
     "mario",
     "smm",
