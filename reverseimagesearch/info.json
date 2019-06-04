@@ -1,0 +1,18 @@
+{
+  "author": [
+    "Fixator10"
+  ],
+  "install_msg": "Thanks for install.",
+  "short": "This cog allows users to reverse search images",
+  "description": "This cog allows users to reverse search images\nCurrently, only SauceNAO supported",
+  "tags": [
+    "reverse",
+    "image",
+    "search",
+    "saucenao"
+  ],
+  "requirements": [
+    "python-dateutil",
+    "pillow>=6"
+  ]
+}

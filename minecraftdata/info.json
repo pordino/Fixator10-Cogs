@@ -12,6 +12,7 @@
   ],
   "requirements": [
     "tabulate",
-    "wcwidth"
+    "wcwidth",
+    "mcstatus"
   ]
 }

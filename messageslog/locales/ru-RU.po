@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-05-23 12:36+0400\n"
+"PO-Revision-Date: 2019-05-23 12:37+0400\n"
+"Last-Translator: Максим Невзоров\n"
+"Language-Team: \n"
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: redgettext 2.2\n"
+"X-Generator: Poedit 2.2.2\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+msgid "Log deleted and redacted messages to the defined channel"
+msgstr ""
+"Записывает удалённые и отредактированные сообщения в установленный канал"
+
+msgid "Manage message logging"
+msgstr "Управление логированием сообщений"
+
+msgid ""
+"Set the channel for logs\n"
+"\n"
+"        If channel is not provided, then logging will be disabled"
+msgstr ""
+"Устанавливает канал для логов\n"
+"\n"
+"        Если канал не указан, логирование будет отключено"
+
+msgid "Toggle logging of message deletion"
+msgstr "Переключает логирование удалённых сообщений"
+
+msgid "enabled"
+msgstr "включено"
+
+msgid "disabled"
+msgstr "выключено"
+
+msgid "Message deletion logging {}"
+msgstr "Логирование удалённых сообщений {}"
+
+msgid "Toggle logging of message editing"
+msgstr "Переключает логирование отредактированных сообщений"
+
+msgid "Message editing logging {}"
+msgstr "Логирование редактирований сообщений {}"
+
+msgid ""
+"Manage message logging blacklist\n"
+"\n"
+"        Shows blacklist if no arguments provided\n"
+"        You can ignore text channels, categories and members\n"
+"        If item is in blacklist, removes it"
+msgstr ""
+"Управление чёрным списком логов сообщений\n"
+"\n"
+"        Показывает чёрный список, если не указано никаких аргументов\n"
+"        Вы можете игнорировать текстовые каналы, категории и участников\n"
+"        Если предмет в чёрном списке, убирает его"
+
+msgid "Nothing is ignored"
+msgstr "Ничего не игнорируется"
+
+msgid "Ignored users"
+msgstr "Игнорируемые пользователи"
+
+msgid "Ignored channels"
+msgstr "Игнорируемые каналы"
+
+msgid "Ignored categories"
+msgstr "Игнорируемые категории"
+
+msgid "Message deleted"
+msgstr "Сообщение удалено"
+
+msgid "Attachments"
+msgstr "Вложения"
+
+msgid "ID: {} • Sent at"
+msgstr "ID: {} • Отправлено в"
+
+msgid "Channel"
+msgstr "Канал"
+
+msgid "Message redacted (Before)"
+msgstr "Сообщение отредактировано (До)"
+
+msgid "Now"
+msgstr "Сейчас"
+
+msgid "[View message]({})"
+msgstr "[Просмотреть сообщение]({})"
+
+#~ msgid "Ignore channel(s) in message logging"
+#~ msgstr "Игнорировать канал(ы) при логировании сообщений"
+
+#~ msgid "Ignore member(s) in message logging"
+#~ msgstr "Игнорировать участника(ов) при логировании сообщений"
+
+#~ msgid "Manage message logging blacklist"
+#~ msgstr "Управление черным списком логов сообщений"
+
+#~ msgid "Shows ignored channels and members list"
+#~ msgstr "Показывает список игнорируемых каналов и участников"
+
+#~ msgid "Message redacted (After)"
+#~ msgstr "Сообщение отредактировано (После)"
+
+#~ msgid "ID: {} • Redacted at"
+#~ msgstr "ID: {} • Отредактировано в"

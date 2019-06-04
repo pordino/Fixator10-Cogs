@@ -14,6 +14,7 @@ import textwrap
 import time
 from asyncio import TimeoutError
 from pathlib import Path
+from io import BytesIO
 
 import aiohttp
 import discord
@@ -21,7 +22,6 @@ from discord.utils import find
 from redbot.core import bank, checks, commands, Config
 from redbot.core.data_manager import bundled_data_path, cog_data_path
 from redbot.core.utils.chat_formatting import pagify, box
-from redbot.core.utils.data_converter import DataConverter as dc
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
@@ -64,7 +64,7 @@ class Leveler(commands.Cog):
         self.config.register_guild(**default_guild)
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
-    def __unload(self):
+    def cog_unload(self):
         self.session.detach()
 
     @property
@@ -1013,44 +1013,6 @@ class Leveler(commands.Cog):
     async def lvladmin(self, ctx):
         """Admin settings."""
         pass
-
-    @lvladmin.command()
-    @checks.is_owner()
-    async def convertv2(self, ctx, path):
-        """Convert data from V2 cog."""
-        base_path = Path(path)
-        fp_settings = base_path / "data" / "leveler" / "settings.json"
-        fp_backgrounds = base_path / "data" / "leveler" / "backgrounds.json"
-        if any([not fp_settings.is_file(), not fp_backgrounds.is_file()]):
-            ctx.send("Config is not found, check your path and try again")
-            return
-        converter = dc(self.config)
-
-        def conversion_spec_bgs(v2data: dict):
-            yield {(Config.GLOBAL,): {("backgrounds",): v2data}}
-
-        def conversion_spec_settings(v2data: dict):
-            yield {
-                (Config.GLOBAL,): {
-                    ("bg_price",): v2data["bg_price"],
-                    ("badge_type",): v2data["badge_type"],
-                }
-            }
-
-            for guild in v2data["disabled_servers"]:
-                yield {(Config.GUILD, guild): {("disabled",): True}}
-            for guild in v2data["msg_credits"]:
-                yield {(Config.GUILD, guild): {("msg_credits",): v2data["msg_credits"][guild]}}
-            for guild in v2data["private_lvl_msg"]:
-                yield {(Config.GUILD, guild): {("private_lvl_message",): True}}
-            for guild in v2data["lvl_msg"]:
-                yield {(Config.GUILD, guild): {("lvl_msg",): True}}
-            for guild in v2data["text_only"]:
-                yield {(Config.GUILD, guild): {("text_only",): True}}
-
-        await converter.convert(fp_backgrounds, conversion_spec_bgs)
-        await converter.convert(fp_settings, conversion_spec_settings)
-        await ctx.tick()
 
     @checks.admin_or_permissions(manage_guild=True)
     @lvladmin.group(invoke_without_command=True)
@@ -2195,23 +2157,12 @@ class Leveler(commands.Cog):
 
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png", "wb") as f:
-            f.write(image)
-        try:
-            async with self.session.get(profile_url) as r:
-                image = await r.content.read()
-        except:
-            async with self.session.get(default_avatar_url) as r:
-                image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_level_profile.png", "wb") as f:
-            f.write(image)
+        profile_background = BytesIO(image)
+        profile_avatar = BytesIO()
+        await user.avatar_url.save(profile_avatar, seek_begin=True)
 
-        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png").convert(
-            "RGBA"
-        )
-        profile_image = Image.open(
-            f"{cog_data_path(self)}/{user.id}_temp_level_profile.png"
-        ).convert("RGBA")
+        bg_image = Image.open(profile_background).convert("RGBA")
+        profile_image = Image.open(profile_avatar).convert("RGBA")
 
         # set canvas
         bg_color = (255, 255, 255, 0)
@@ -2326,10 +2277,13 @@ class Leveler(commands.Cog):
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
-        output = ImageOps.fit(profile_image, (raw_length, raw_length), centering=(0.5, 0.5))
-        output = output.resize((profile_size, profile_size), Image.ANTIALIAS)
+        total_gap = 6
+        border = int(total_gap / 2)
+        profile_size = lvl_circle_dia - total_gap
         mask = mask.resize((profile_size, profile_size), Image.ANTIALIAS)
-        profile_image = profile_image.resize((profile_size, profile_size), Image.ANTIALIAS)
+        profile_image = profile_image.resize(
+            (profile_size, profile_size), Image.ANTIALIAS
+        )
         process.paste(profile_image, (circle_left + border, circle_top + border), mask)
 
         # write label text
@@ -2721,42 +2675,22 @@ class Leveler(commands.Cog):
 
         userinfo = db.users.find_one({"user_id": str(user.id)})
         # get urls
-        bg_url = userinfo["rank_background"]
-        profile_url = user.avatar_url
-        server_icon_url = server.icon_url
-
-        # create image objects
-        bg_image = Image
-        profile_image = Image
-
+        bg_url = userinfo["rank_background"]  
+        server_icon_url = server.icon_url_as(format='png', size=1024)
+        
+        
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_rank_bg.png", "wb") as f:
-            f.write(image)
-        try:
-            async with self.session.get(profile_url) as r:
-                image = await r.content.read()
-        except:
-            async with self.session.get(default_avatar_url) as r:
-                image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_rank_profile.png", "wb") as f:
-            f.write(image)
-        try:
-            async with self.session.get(server_icon_url) as r:
-                image = await r.content.read()
-        except:
-            async with self.session.get(default_avatar_url) as r:
-                image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_server_icon.png", "wb") as f:
-            f.write(image)
+        rank_background = BytesIO(image)
+        rank_avatar = BytesIO()
+        await user.avatar_url.save(rank_avatar, seek_begin=True)
 
-        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_rank_bg.png").convert("RGBA")
-        profile_image = Image.open(
-            f"{cog_data_path(self)}/{user.id}_temp_rank_profile.png"
-        ).convert("RGBA")
-        server_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_server_icon.png").convert(
-            "RGBA"
-        )
+        server_icon = BytesIO()
+        await server.icon_url_as(format='png').save(server_icon, seek_begin=True)
+
+        bg_image = Image.open(rank_background).convert("RGBA")
+        profile_image = Image.open(rank_avatar).convert("RGBA")
+        server_icon_image = Image.open(server_icon).convert("RGBA")
 
         # set canvas
         width = 360
@@ -2861,10 +2795,14 @@ class Leveler(commands.Cog):
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
-        output = ImageOps.fit(profile_image, (raw_length, raw_length), centering=(0.5, 0.5))
-        output = output.resize((profile_size, profile_size), Image.ANTIALIAS)
+        output = ImageOps.fit(
+            profile_image, (raw_length, raw_length), centering=(0.5, 0.5)
+        )
+        output.resize((profile_size, profile_size), Image.ANTIALIAS)
         mask = mask.resize((profile_size, profile_size), Image.ANTIALIAS)
-        profile_image = profile_image.resize((profile_size, profile_size), Image.ANTIALIAS)
+        profile_image = profile_image.resize(
+            (profile_size, profile_size), Image.ANTIALIAS
+        )
         process.paste(profile_image, (circle_left + border, circle_top + border), mask)
 
         # draw level box
@@ -2907,20 +2845,20 @@ class Leveler(commands.Cog):
         draw_server_border = draw_server_border.resize(
             (server_border_size, server_border_size), Image.ANTIALIAS
         )
-        server_image = server_image.resize(
+        server_icon_image = server_icon_image.resize(
             (server_size * multiplier, server_size * multiplier), Image.ANTIALIAS
         )
-        server_image = self._add_corners(server_image, int(radius * multiplier / 2) - 10)
-        server_image = server_image.resize((server_size, server_size), Image.ANTIALIAS)
+        server_icon_image = self._add_corners(server_icon_image, int(radius * multiplier / 2) - 10)
+        server_icon_image = server_icon_image.resize((server_size, server_size), Image.ANTIALIAS)
         process.paste(
             draw_server_border,
             (circle_left + profile_size + 2 * border + 8, content_top + 3),
             draw_server_border,
         )
         process.paste(
-            server_image,
+            server_icon_image,
             (circle_left + profile_size + 2 * border + 10, content_top + 5),
-            server_image,
+            server_icon_image,
         )
 
         # name
@@ -3005,21 +2943,13 @@ class Leveler(commands.Cog):
 
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_level_bg.png", "wb") as f:
-            f.write(image)
-        try:
-            async with self.session.get(profile_url) as r:
-                image = await r.content.read()
-        except:
-            async with self.session.get(default_avatar_url) as r:
-                image = await r.content.read()
-        with open(f"{cog_data_path(self)}/{user.id}_temp_level_profile.png", "wb") as f:
-            f.write(image)
 
-        bg_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_level_bg.png").convert("RGBA")
-        profile_image = Image.open(
-            f"{cog_data_path(self)}/{user.id}_temp_level_profile.png"
-        ).convert("RGBA")
+        level_background = BytesIO(image)
+        level_avatar = BytesIO()
+        await user.avatar_url.save(level_avatar, seek_begin=True)
+
+        bg_image = Image.open(level_background).convert("RGBA")
+        profile_image = Image.open(level_avatar).convert("RGBA")
 
         # set canvas
         width = 175
@@ -3107,6 +3037,7 @@ class Leveler(commands.Cog):
         filename = f"{cog_data_path(self)}/{user.id}_level.png"
         result.save(filename, "PNG", quality=100)
 
+    @commands.Cog.listener("on_message_without_command")
     async def _handle_on_message(self, message):
         text = message.content
         channel = message.channel

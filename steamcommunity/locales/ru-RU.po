@@ -1,0 +1,211 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-05-14 12:15+0400\n"
+"PO-Revision-Date: 2019-05-14 12:16+0400\n"
+"Last-Translator: Максим Невзоров\n"
+"Language-Team: \n"
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: redgettext 2.2\n"
+"X-Generator: Poedit 2.2.1\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+msgid "SteamCommunity commands"
+msgstr "Команды SteamCommunity"
+
+msgid "Set API key for Steam Web API"
+msgstr "Установить API ключ для Steam Web API"
+
+msgid ""
+"To get Steam Web API key:\n"
+"1. Login to your Steam account\n"
+"2. Visit [Register Steam Web API Key](https://steamcommunity.com/dev/apikey) "
+"page\n"
+"3. Enter any domain name (e.g. `localhost`)\n"
+"4. You will now see \"Key\" field\n"
+"5. Use `{}set api steam web,<your_apikey>`\n"
+"6. Use this command again\n"
+"\n"
+"Note: These tokens are sensitive and should only be used in a private "
+"channel\n"
+"or in DM with the bot."
+msgstr ""
+"Для получения ключа Steam Web API:\n"
+"1. Войдите в ваш аккаунт Steam\n"
+"2. Посетите страницу [Зарегестрировать ключ Steam Web API](https://"
+"steamcommunity.com/dev/apikey)\n"
+"3. Введите любой домен (например `localhost`)\n"
+"4. Вы увидите поле \"Ключ\"\n"
+"5. Используйте команду `{}set api steam web,<your_apikey>`\n"
+"6. Используйте эту команду снова\n"
+"\n"
+"Примечание: Эти ключи регистрозависимы и их настройка должна \n"
+"производится только в приватном канале или в ЛС с ботом."
+
+msgid "Get steam user's steamcommunity profile"
+msgstr "Вывести профиль пользователя Steam в Steamcommunity"
+
+msgid "In game: [{}](http://store.steampowered.com/app/{})"
+msgstr "В игре: [{}](http://store.steampowered.com/app/{})"
+
+msgid " on server {}"
+msgstr " на сервере {}"
+
+msgid ""
+"\n"
+"Family Shared by [{}]({})"
+msgstr ""
+"\n"
+"Доступ по Family Sharing от [{}]({})"
+
+msgid "Real name"
+msgstr "Настоящее имя"
+
+msgid "Level"
+msgstr "Уровень"
+
+msgid "Country"
+msgstr "Страна"
+
+msgid "Visibility"
+msgstr "Видимость"
+
+msgid "Created at"
+msgstr "Создан"
+
+msgid "%d.%m.%Y %H:%M:%S"
+msgstr ""
+
+msgid "Days since last ban: {}"
+msgstr "Дней с последней блокировки: {}"
+
+msgid "Has one or more bans:"
+msgstr "Имеет одну или более блокировок:"
+
+msgid "No bans on record"
+msgstr "Нет известных блокировок"
+
+msgid "🛡 Bans"
+msgstr "🛡 Баны"
+
+msgid "Community ban"
+msgstr "Блокировка сообщества"
+
+msgid "Economy ban"
+msgstr "Блокировка экономики"
+
+msgid "VAC bans"
+msgstr "VAC блокировка"
+
+msgid "{} VAC bans"
+msgstr "{} блокировок VAC"
+
+msgid "Game bans"
+msgstr "Игровые блокировки"
+
+msgid "{} game bans"
+msgstr "{} игровых блокировок"
+
+msgid "Powered by Steam • Last seen on"
+msgstr "Powered by Steam • Последний раз в сети"
+
+msgid "Get info about a gameserver"
+msgstr "Получить информацию о игровом сервере"
+
+msgid "The specified domain is not valid: {}"
+msgstr "Указаный домен неверен: {}"
+
+msgid "Could not fetch Server or the Server is not on the Steam masterlist"
+msgstr "Невозможно найти сервер или сервер не в мастерсписке Steam"
+
+msgid "An Error has been occurred: {}"
+msgstr "Произошла ошибка: {}"
+
+msgid "Game"
+msgstr "Игра"
+
+msgid "Gamemode"
+msgstr "Игровой режим"
+
+msgid "Server name"
+msgstr "Название сервера"
+
+msgid "Map"
+msgstr "Карта"
+
+msgid "Operating System"
+msgstr "Операционная система"
+
+msgid "Server type"
+msgstr "Тип сервера"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Players"
+msgstr "Игроков"
+
+msgid ""
+"{}/{}\n"
+"Bots: {}"
+msgstr ""
+"{}/{}\n"
+"Ботов: {}"
+
+msgid "Private"
+msgstr "Скрытый"
+
+msgid "Friends only"
+msgstr "Только друзья"
+
+msgid "Public"
+msgstr "Открытый"
+
+msgid "Users only"
+msgstr "Только пользователи"
+
+msgid "ApiKey not set or incorrect."
+msgstr "API ключ не установлен или неверен."
+
+msgid "Incorrect SteamID32 provided."
+msgstr "Указан неверный SteamID32."
+
+msgid "User with SteamID {} not found."
+msgstr "Пользователь с SteamID {} не найден."
+
+msgid "Unable to get profile for {} ({}). Check your input or try again later."
+msgstr ""
+"Не могу получить профиль для {} ({}). Проверьте вводные данные или "
+"попробуйте позднее."
+
+msgid "Offline"
+msgstr "Не в сети"
+
+msgid "Online"
+msgstr "В сети"
+
+msgid "Busy"
+msgstr "Не беспокоить"
+
+msgid "Away"
+msgstr "Нет на месте"
+
+msgid "Snooze"
+msgstr "Спит"
+
+msgid "Looking to trade"
+msgstr "Хочет обменяться"
+
+msgid "Looking to play"
+msgstr "Хочет играть"

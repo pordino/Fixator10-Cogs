@@ -1,119 +1,155 @@
 import base64
-import io
 import itertools
 import random
 import re
+from io import BytesIO
 from urllib import parse
 
 import aiohttp
 import discord
 from redbot.core import checks
 from redbot.core import commands
+from redbot.core.i18n import Translator, cog_i18n
 from redbot.core.utils import chat_formatting as chat
-from yandex_translate import YandexTranslate, YandexTranslateException
+
+from . import yandextranslate
+
+_ = Translator("Translators", __file__)
+
+USERAGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Ubuntu Chromium/69.0.3497.81 "
+    "Chrome/69.0.3497.81 "
+    "Safari/537.36"
+)
 
 
+@cog_i18n(_)
 class Translators(commands.Cog):
+    # noinspection PyMissingConstructor
     def __init__(self, bot):
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
-    def __unload(self):
+    def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
 
     @commands.command()
     @checks.is_owner()
     async def ytapikey(self, ctx):
         """Set API key for Yandex.Translate"""
-        message = (
+        message = _(
             "To get Yandex.Translate API key:\n"
             "1. Login to your Yandex account\n"
-            "2. Visit [API-ключи](https://translate.yandex.ru/developers/keys) page\n"
-            "3. Press `Создать новый ключ`\n"
-            "4. Enter description for key\n"
-            "5. Copy `trnsl.*` key\n"
-            "6. Use `{}set api yandex translate,<your_apikey>`".format(ctx.prefix)
-        )
+            "1.1. Visit [API keys](https://translate.yandex.com/developers/keys) page\n"
+            "2. Press `Create a new key`\n"
+            "3. Enter description for key\n"
+            "4. Copy `trnsl.*` key\n"
+            "5. Use `{}set api yandex translate,<your_apikey>`"
+        ).format(ctx.prefix)
         await ctx.maybe_send_embed(message)
 
     @commands.command()
+    @commands.bot_has_permissions(embed_links=True)
     async def ytranslate(self, ctx, language: str, *, text: str):
-        """Translate text via yandex
+        """Translate text via Yandex
 
         Language may be just "ru" (target language to translate)
         or "en-ru" (original text's language - target language)"""
         text = chat.escape(text, formatting=True)
-        apikeys = await self.bot.db.api_tokens.get_raw("yandex", default={"translate": None})
+        apikeys = await self.bot.db.api_tokens.get_raw(
+            "yandex", default={"translate": None}
+        )
         try:
-            translate = YandexTranslate(apikeys["translate"])
-            response = translate.translate(text, language)
-        except YandexTranslateException as e:
-            if str(e) == "ERR_LANG_NOT_SUPPORTED":
-                await ctx.send(chat.error("An error has been occurred: Language {} is not supported"
-                                          .format(chat.inline(language))))
-            elif str(e) == "ERR_TEXT_TOO_LONG":
-                # Discord will return BAD REQUEST (400) sooner than this happen, but whatever...
-                await ctx.send(chat.error("An error has been occurred: Text that you provided is too big to "
-                                          "translate"))
-            elif str(e) == "ERR_KEY_INVALID":
-                await ctx.send(chat.error("This command requires Yandex.Translate API key\n"
-                                          "You can set it via {}ytapikey".format(ctx.prefix)))
-            elif str(e) == "ERR_KEY_BLOCKED":
-                await ctx.send(chat.error("API key is blocked. You need to get new api key or unlock current."))
-            elif str(e) == "ERR_DAILY_REQ_LIMIT_EXCEEDED":
-                await ctx.send(chat.error("Daily requests limit reached. Try again later."))
-            elif str(e) == "ERR_DAILY_CHAR_LIMIT_EXCEEDED":
-                await ctx.send(chat.error("Daily char limit is exceeded. Try again later."))
-            elif str(e) == "ERR_UNPROCESSABLE_TEXT":
-                await ctx.send(chat.error("An error has been occurred: Text is unprocessable by translation server"))
-            elif str(e) == "ERR_SERVICE_NOT_AVAIBLE":
-                await ctx.send(chat.error("An error has been occurred: Service Unavailable. Try again later"))
-            else:
-                await ctx.send(chat.error("An error has been occurred: {}".format(e)))
-            return
-        input_lang = None
-        output_lang = None
-        if len(language) == 2:
-            try:
-                input_lang = translate.detect(text=text)
-            except YandexTranslateException as e:
-                if str(e) == "ERR_LANG_NOT_SUPPORTED":
-                    await ctx.send(chat.error("This language is not supported"))
-                else:
-                    await ctx.send(chat.error("Unable to detect language: {}".format(e)))
-                return
-            output_lang = language
-        elif len(language) == 5:
-            input_lang = language[:2]
-            output_lang = language[3:]
-        if response["code"] == 200:
-            await ctx.send("**[{}] Input:** {}".format(input_lang.upper(), chat.box(text)))
-            await ctx.send("**[{}] Translation:** {}".format(output_lang.upper(), chat.box(response["text"][0])))
+            translator = yandextranslate.YTranslateAPI(
+                self.session, apikeys["translate"]
+            )
+            translation = await translator.get_translation(language, text)
+        except yandextranslate.Exceptions.IncorrectLang:
+            await ctx.send(
+                chat.error(
+                    _(
+                        "An error has been occurred: "
+                        "Language {} is not supported or incorrect, "
+                        "check your formatting and try again"
+                    ).format(chat.inline(language))
+                )
+            )
+        except yandextranslate.Exceptions.MaxTextLengthExceeded:
+            await ctx.send(
+                chat.error(
+                    _(
+                        "An error has been occurred: Text that you provided is too big to translate"
+                    )
+                )
+            )
+        except yandextranslate.Exceptions.KeyBlocked:
+            await ctx.send(
+                chat.error(
+                    _(
+                        "API key is blocked. Bot owner needs to get new api key or unlock current."
+                    )
+                )
+            )
+        except yandextranslate.Exceptions.DailyLimitExceeded:
+            await ctx.send(
+                chat.error(_("Daily requests limit reached. Try again later."))
+            )
+        except yandextranslate.Exceptions.UnableToTranslate:
+            await ctx.send(
+                chat.error(
+                    _(
+                        "An error has been occurred: Yandex.Translate is unable to translate your text"
+                    )
+                )
+            )
+        except yandextranslate.Exceptions.UnknownException as e:
+            await ctx.send(chat.error(_("An error has been occurred: {}").format(e)))
         else:
-            # According to yandex.translate source code this cannot happen too, but whatever...
-            await ctx.send("An error has been occurred. Translation server returned code {}"
-                           .format(chat.inline(response["code"])))
+            embed = discord.Embed(
+                description=f"**[{translation.lang.upper()}]**{chat.box(translation.text)}",
+                color=await ctx.embed_color(),
+            )
+            embed.set_author(
+                name=_("Translated via Yandex.Translate"),
+                url="https://translate.yandex.com",
+                icon_url="https://translate.yandex.ru/icons/favicon.png",
+            )
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def googlesay(self, ctx, lang: str, *, text: str):
         """Say something via Google Translate
 
+        lang arg must be two-letters google-translate language code
+        Not all languages support tts
         If text contains more than 200 symbols, it will be cut"""
         text = text[:200]
-        try:
-            async with self.session.get("http://translate.google.com/translate_tts?ie=utf-8"
-                                        "&q={}&tl={}&client=tw-ob".format(parse.quote(text), lang),
-                                        headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ("
-                                                               "KHTML, like Gecko) Ubuntu Chromium/69.0.3497.81 "
-                                                               "Chrome/69.0.3497.81 Safari/537.36"}) as data:
-                if data.status != 200:
-                    await ctx.send(chat.error("Google Translate returned code {}".format(data.status)))
-                    return
-                speech = await data.read()
-        except Exception as e:
-            await ctx.send("Unable to get data from Google Translate TTS: {}".format(e))
-            return
-        speechfile = io.BytesIO(speech)
+        async with ctx.typing():
+            try:
+                async with self.session.get(
+                        "http://translate.google.com/translate_tts",
+                        params={"ie": "utf-8", "q": text, "tl": lang, "client": "tw-ob"},
+                        headers={"User-Agent": USERAGENT},
+                        raise_for_status=True,
+                ) as data:
+                    speech = await data.read()
+            except aiohttp.ClientResponseError as e:
+                if e.status == 404:
+                    await ctx.send(
+                        _("Language {} is not supported or incorrect").format(
+                            lang.lower()
+                        )
+                    )
+                else:
+                    await ctx.send(
+                        _("Unable to get data from Google Translate TTS: {}").format(
+                            e.status
+                        )
+                    )
+                return
+        speechfile = BytesIO(speech)
         file = discord.File(speechfile, filename="{}.mp3".format(text[:32]))
         await ctx.send(file=file)
         speechfile.close()
@@ -122,7 +158,7 @@ class Translators(commands.Cog):
     async def eciho(self, ctx, *, text: str):
         """Translates text (cyrillic/latin) to "eciho"
 
-        eciho - language created by Фражуз#9941 (255682413445906433)
+        eciho - language created by Фражуз#2170 (255682413445906433)
 
         This is unusable shit, i know, but whatever"""
         char = "сзчшщжуюваёяэкгфйыъьд"
@@ -133,7 +169,7 @@ class Translators(commands.Cog):
         tran = tran.upper()
         table = str.maketrans(char, tran)
         text = text.translate(table)
-        text = ''.join(c for c, _ in itertools.groupby(text))
+        text = "".join(c for c, _ in itertools.groupby(text))
         char = "uavwjyqkhfxdzs"
         tran = "ooooiigggggbcc"
         table = str.maketrans(char, tran)
@@ -156,23 +192,20 @@ class Translators(commands.Cog):
         tran = down + up
         table = str.maketrans(char, tran)
         text = text.translate(table)[::-1]
-        dic = {
-            "ю": "oı",
-            "ы": "ıq",
-            "ё": "ǝ̤",
-            "й": "n̯"
-        }
-        pattern = re.compile('|'.join(dic.keys()))
+        dic = {"ю": "oı", "ы": "ıq", "ё": "ǝ̤", "й": "n̯"}
+        pattern = re.compile("|".join(dic.keys()))
         result = pattern.sub(lambda x: dic[x.group()], text)
         await ctx.send(result)
 
     @commands.command()
     async def fullwidth(self, ctx, *, text: str):
         """Switches text to Ｆｕｌｌ－ｗｉｄｔｈ　ｃｈａｒａｃｔｅｒｓ"""
-        halfwidth = "qwertyuiopasdfghjklzxcvbnm1234567890!?" \
-                    "@#$%^&*()_+-=<>.,/;:'\"[]{}|\\`~ "
-        fullwidth = "ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍ１２３４５６７８９０！？" \
-                    "＠＃＄％＾＆＊（）＿＋－＝＜＞．，／；：＇＂［］｛｝｜＼｀～　"
+        halfwidth = (
+            "qwertyuiopasdfghjklzxcvbnm1234567890!?" "@#$%^&*()_+-=<>.,/;:'\"[]{}|\\`~ "
+        )
+        fullwidth = (
+            "ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍ１２３４５６７８９０！？" "＠＃＄％＾＆＊（）＿＋－＝＜＞．，／；：＇＂［］｛｝｜＼｀～　"
+        )
         table = str.maketrans(halfwidth, fullwidth)
         text = text.translate(table)
         halfwidth = halfwidth.upper()
@@ -216,9 +249,9 @@ class Translators(commands.Cog):
             "W": random.choice(["\\/\\/", "\\X/"]),
             "X": random.choice(["*", "><"]),
             "Y": "'/",
-            "Z": "2"
+            "Z": "2",
         }
-        pattern = re.compile('|'.join(dic.keys()))
+        pattern = re.compile("|".join(dic.keys()))
         result = pattern.sub(lambda x: dic[x.group()], text)
         await ctx.send(chat.box(result))
 
@@ -260,9 +293,9 @@ class Translators(commands.Cog):
             "Э": "-)",
             "Ю": random.choice(["IO", "10"]),
             "Я": random.choice(["9", "9I"]),
-            "%": "o\\o"
+            "%": "o\\o",
         }
-        pattern = re.compile('|'.join(dic_cs.keys()))
+        pattern = re.compile("|".join(dic_cs.keys()))
         result = pattern.sub(lambda x: dic_cs[x.group()], text)
         await ctx.send(chat.box(result))
 
@@ -273,7 +306,7 @@ class Translators(commands.Cog):
 
     @_base64.command(name="encode")
     async def _tobase64(self, ctx, *, text: str):
-        """Encode text to base64"""
+        """Encode text to Base64"""
         text = text.encode()
         output = base64.standard_b64encode(text)
         result = output.decode()
@@ -282,16 +315,20 @@ class Translators(commands.Cog):
 
     @_base64.command(name="decode")
     async def _frombase64(self, ctx, *, encoded: str):
-        """Decode text from base64"""
+        """Decode text from Base64"""
         encoded = encoded.encode()
-        decoded = base64.standard_b64decode(encoded)
-        result = decoded.decode()
+        try:
+            decoded = base64.standard_b64decode(encoded)
+            result = decoded.decode()
+        except Exception as e:
+            await ctx.send(e)
+            return
         await ctx.send(chat.box(result))
 
     # noinspection PyPep8
     @commands.command()
     async def emojify(self, ctx, *, message: str):
-        """emojify text"""
+        """Emojify text"""
         char = "abcdefghijklmnopqrstuvwxyz↓↑←→—.!"
         tran = "🇦🇧🇨🇩🇪🇫🇬🇭🇮🇯🇰🇱🇲🇳🇴🇵🇶🇷🇸🇹🇺🇻🇼🇽🇾🇿⬇⬆⬅➡➖⏺ℹ"
         table = str.maketrans(char, tran)
@@ -301,19 +338,20 @@ class Translators(commands.Cog):
         name = name.translate(table)
         await ctx.send(
             name.replace(" ", "　　")
-                .replace("", "​")
-                .replace("0", ":zero:")
-                .replace("1", ":one:")
-                .replace("2", ":two:")
-                .replace("3", ":three:")
-                .replace("4", ":four:")
-                .replace("5", ":five:")
-                .replace("6", ":six:")
-                .replace("7", ":seven:")
-                .replace("8", ":eight:")
-                .replace("9", ":nine:")
-                .replace("#", "#⃣")
-                .replace("*", "*⃣"))
+            .replace("", "​")
+            .replace("0", ":zero:")
+            .replace("1", ":one:")
+            .replace("2", ":two:")
+            .replace("3", ":three:")
+            .replace("4", ":four:")
+            .replace("5", ":five:")
+            .replace("6", ":six:")
+            .replace("7", ":seven:")
+            .replace("8", ":eight:")
+            .replace("9", ":nine:")
+            .replace("#", "#⃣")
+            .replace("*", "*⃣")
+        )
 
     @commands.command(pass_context=True, name="urlencode", aliases=["url"])
     async def _urlencode(self, ctx, *, text: str):

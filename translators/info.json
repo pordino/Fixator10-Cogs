@@ -10,8 +10,5 @@
     "translation",
     "yandex",
     "translate"
-  ],
-  "requirements": [
-    "yandex-translate"
   ]
 }

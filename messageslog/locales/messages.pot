@@ -1,0 +1,88 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2019-05-23 12:36+0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: redgettext 2.2\n"
+
+
+msgid "Log deleted and redacted messages to the defined channel"
+msgstr ""
+
+msgid "Manage message logging"
+msgstr ""
+
+msgid ""
+"Set the channel for logs\n"
+"\n"
+"        If channel is not provided, then logging will be disabled"
+msgstr ""
+
+msgid "Toggle logging of message deletion"
+msgstr ""
+
+msgid "enabled"
+msgstr ""
+
+msgid "disabled"
+msgstr ""
+
+msgid "Message deletion logging {}"
+msgstr ""
+
+msgid "Toggle logging of message editing"
+msgstr ""
+
+msgid "Message editing logging {}"
+msgstr ""
+
+msgid ""
+"Manage message logging blacklist\n"
+"\n"
+"        Shows blacklist if no arguments provided\n"
+"        You can ignore text channels, categories and members\n"
+"        If item is in blacklist, removes it"
+msgstr ""
+
+msgid "Nothing is ignored"
+msgstr ""
+
+msgid "Ignored users"
+msgstr ""
+
+msgid "Ignored channels"
+msgstr ""
+
+msgid "Ignored categories"
+msgstr ""
+
+msgid "Message deleted"
+msgstr ""
+
+msgid "Attachments"
+msgstr ""
+
+msgid "ID: {} • Sent at"
+msgstr ""
+
+msgid "Channel"
+msgstr ""
+
+msgid "Message redacted (Before)"
+msgstr ""
+
+msgid "Now"
+msgstr ""
+
+msgid "[View message]({})"
+msgstr ""
+

@@ -1,0 +1,190 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2019-05-14 12:15+0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: redgettext 2.2\n"
+
+
+msgid "SteamCommunity commands"
+msgstr ""
+
+msgid "Set API key for Steam Web API"
+msgstr ""
+
+msgid ""
+"To get Steam Web API key:\n"
+"1. Login to your Steam account\n"
+"2. Visit [Register Steam Web API Key](https://steamcommunity.com/dev/apikey) page\n"
+"3. Enter any domain name (e.g. `localhost`)\n"
+"4. You will now see \"Key\" field\n"
+"5. Use `{}set api steam web,<your_apikey>`\n"
+"6. Use this command again\n"
+"\n"
+"Note: These tokens are sensitive and should only be used in a private channel\n"
+"or in DM with the bot."
+msgstr ""
+
+msgid "Get steam user's steamcommunity profile"
+msgstr ""
+
+msgid "In game: [{}](http://store.steampowered.com/app/{})"
+msgstr ""
+
+msgid " on server {}"
+msgstr ""
+
+msgid ""
+"\n"
+"Family Shared by [{}]({})"
+msgstr ""
+
+msgid "Real name"
+msgstr ""
+
+msgid "Level"
+msgstr ""
+
+msgid "Country"
+msgstr ""
+
+msgid "Visibility"
+msgstr ""
+
+msgid "Created at"
+msgstr ""
+
+msgid "%d.%m.%Y %H:%M:%S"
+msgstr ""
+
+msgid "Days since last ban: {}"
+msgstr ""
+
+msgid "Has one or more bans:"
+msgstr ""
+
+msgid "No bans on record"
+msgstr ""
+
+msgid "🛡 Bans"
+msgstr ""
+
+msgid "Community ban"
+msgstr ""
+
+msgid "Economy ban"
+msgstr ""
+
+msgid "VAC bans"
+msgstr ""
+
+msgid "{} VAC bans"
+msgstr ""
+
+msgid "Game bans"
+msgstr ""
+
+msgid "{} game bans"
+msgstr ""
+
+msgid "Powered by Steam • Last seen on"
+msgstr ""
+
+msgid "Get info about a gameserver"
+msgstr ""
+
+msgid "The specified domain is not valid: {}"
+msgstr ""
+
+msgid "Could not fetch Server or the Server is not on the Steam masterlist"
+msgstr ""
+
+msgid "An Error has been occurred: {}"
+msgstr ""
+
+msgid "Game"
+msgstr ""
+
+msgid "Gamemode"
+msgstr ""
+
+msgid "Server name"
+msgstr ""
+
+msgid "Map"
+msgstr ""
+
+msgid "Operating System"
+msgstr ""
+
+msgid "Server type"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Players"
+msgstr ""
+
+msgid ""
+"{}/{}\n"
+"Bots: {}"
+msgstr ""
+
+msgid "Private"
+msgstr ""
+
+msgid "Friends only"
+msgstr ""
+
+msgid "Public"
+msgstr ""
+
+msgid "Users only"
+msgstr ""
+
+msgid "ApiKey not set or incorrect."
+msgstr ""
+
+msgid "Incorrect SteamID32 provided."
+msgstr ""
+
+msgid "User with SteamID {} not found."
+msgstr ""
+
+msgid "Unable to get profile for {} ({}). Check your input or try again later."
+msgstr ""
+
+msgid "Offline"
+msgstr ""
+
+msgid "Online"
+msgstr ""
+
+msgid "Busy"
+msgstr ""
+
+msgid "Away"
+msgstr ""
+
+msgid "Snooze"
+msgstr ""
+
+msgid "Looking to trade"
+msgstr ""
+
+msgid "Looking to play"
+msgstr ""
+
