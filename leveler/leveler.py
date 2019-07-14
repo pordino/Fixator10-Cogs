@@ -221,14 +221,14 @@ class Leveler(commands.Cog):
         # no cooldown for text only
         if await self.config.guild(server).text_only():
             em = await self.rank_text(user, server, userinfo)
-            await self.bot.send_message(channel, "", embed=em)
+            await channel.send("", embed=em)
         else:
-            async with channel.typing():
+            async with ctx.typing():
                 await self.draw_rank(user, server)
                 file = discord.File(
                     f"{cog_data_path(self)}/{user.id}_rank.png", filename="rank.png"
                 )
-                await channel.send(
+                await ctx.send(
                     "**Ranking & Statistics for {}**".format(await self._is_mention(user)),
                     file=file,
                 )
@@ -3188,14 +3188,14 @@ class Leveler(commands.Cog):
                 await channel.send("Error. Badge was not given!")
 
             if await self.config.guild(server).text_only():
-                await self.bot.send_typing(channel)
-                em = discord.Embed(
-                    description="**{} just gained a level{}! (LEVEL {})**".format(
-                        name, server_identifier, new_level
-                    ),
-                    colour=user.colour,
-                )
-                channel.send(embed=em)
+                async with channel.typing():
+                    em = discord.Embed(
+                        description="**{} just gained a level{}! (LEVEL {})**".format(
+                            name, server_identifier, new_level
+                        ),
+                        colour=user.colour,
+                    )
+                    await channel.send(embed=em)
             else:
                 async with channel.typing():
                     await self.draw_levelup(user, server)
