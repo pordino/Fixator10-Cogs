@@ -8,7 +8,6 @@ from pymongo import MongoClient
 import random
 import re
 import scipy
-import scipy.misc
 import scipy.cluster
 import string
 import textwrap
