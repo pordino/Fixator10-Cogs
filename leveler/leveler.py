@@ -1,4 +1,5 @@
 import math
+import numpy
 import operator
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageColor, ImageOps, ImageFilter
@@ -810,7 +811,7 @@ class Leveler(commands.Cog):
 
         im = Image.open(f"{cog_data_path(self)}/temp_auto.png").convert("RGBA")
         im = im.resize((290, 290))  # resized to reduce time
-        ar = scipy.misc.fromimage(im)
+        ar = numpy.asarray(im)
         shape = ar.shape
         ar = ar.reshape(scipy.product(shape[:2]), shape[2])
 
