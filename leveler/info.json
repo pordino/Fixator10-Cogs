@@ -14,6 +14,7 @@
     "pymongo",
     "fonttools",
     "pillow>=6",
+    "numpy",
     "scipy"
   ]
 }
