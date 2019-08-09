@@ -2675,19 +2675,29 @@ class Leveler(commands.Cog):
 
         userinfo = db.users.find_one({"user_id": str(user.id)})
         # get urls
-        bg_url = userinfo["rank_background"]  
-        server_icon_url = server.icon_url_as(format='png', size=1024)
-        
-        
+        bg_url = userinfo["rank_background"]
+        server_icon_url = server.icon_url_as(format='png', size=256)
+
+        # guild icon image
+        if not server_icon_url._url:
+            server_icon_url = "https://i.imgur.com/BDW180Y.png"
+            async with self.session.get(server_icon_url) as r:
+                server_icon_image = await r.content.read()
+                server_icon = BytesIO(server_icon_image)
+        else:
+            server_icon = BytesIO()
+            await server_icon_url.save(server_icon, seek_begin=True)
+
+        # rank bg image
         async with self.session.get(bg_url) as r:
             image = await r.content.read()
         rank_background = BytesIO(image)
+
+        # user icon image
         rank_avatar = BytesIO()
         await user.avatar_url.save(rank_avatar, seek_begin=True)
 
-        server_icon = BytesIO()
-        await server.icon_url_as(format='png').save(server_icon, seek_begin=True)
-
+        # set all to RGBA
         bg_image = Image.open(rank_background).convert("RGBA")
         profile_image = Image.open(rank_avatar).convert("RGBA")
         server_icon_image = Image.open(server_icon).convert("RGBA")
