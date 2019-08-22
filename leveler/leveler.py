@@ -3388,3 +3388,102 @@ class Leveler(commands.Cog):
                 if ord(unicode_char) in cmap.cmap:
                     return True
         return False
+    
+    @checks.is_owner()
+    @lvladmin.command()
+    @commands.guild_only()
+    async def mee6convertlevels(self, ctx, pages: int):
+        """Convert Mee6 levels.
+        Each page returns 999 users at most."""
+        failed = 0
+        for i in range(pages):
+            async with self.session.get(
+                f"https://mee6.xyz/api/plugins/levels/leaderboard/{ctx.guild.id}?page={i}&limit=999"
+            ) as r:
+                
+                if r.status == 200:
+                    data = await r.json()
+                else:
+                    return await ctx.send("No data was found within the Mee6 API.")
+
+            for userdata in data["players"]:
+                user = self.bot.get_user(int(userdata["id"]))
+                if user is None:
+                    failed += 1
+                    continue
+                level = userdata["level"]
+                server = ctx.guild
+                channel = ctx.channel
+                # creates user if doesn't exist
+                await self._create_user(user, server)
+                userinfo = db.users.find_one({"user_id": str(user.id)})
+
+                # get rid of old level exp
+                old_server_exp = 0
+                for i in range(userinfo["servers"][str(server.id)]["level"]):
+                    old_server_exp += self._required_exp(i)
+                userinfo["total_exp"] -= old_server_exp
+                userinfo["total_exp"] -= userinfo["servers"][str(server.id)]["current_exp"]
+
+                # add in new exp
+                total_exp = self._level_exp(level)
+                userinfo["servers"][str(server.id)]["current_exp"] = 0
+                userinfo["servers"][str(server.id)]["level"] = level
+                userinfo["total_exp"] += total_exp
+
+                db.users.update_one(
+                    {"user_id": str(user.id)},
+                    {
+                        "$set": {
+                            "servers.{}.level".format(server.id): level,
+                            "servers.{}.current_exp".format(server.id): 0,
+                            "total_exp": userinfo["total_exp"],
+                        }
+                    },
+                )
+                await self._handle_levelup(user, userinfo, server, channel)
+        await ctx.send(f"{failed} users could not be found and were skipped.")
+
+    @checks.is_owner()
+    @lvladmin.command()
+    @commands.guild_only()
+    async def mee6convertranks(self, ctx):
+        """Convert Mee6 role rewards."""
+        async with self.session.get(
+            f"https://mee6.xyz/api/plugins/levels/leaderboard/{ctx.guild.id}"
+        ) as r:
+            if r.status == 200:
+                data = await r.json()
+            else:
+                return await ctx.send("No data was found within the Mee6 API.")
+        server = ctx.guild
+        remove_role = None
+        for role in data["role_rewards"]:
+            role_name = role["role"]["name"]
+            level = role["rank"]
+
+            role_obj = discord.utils.find(lambda r: r.name == role_name, server.roles)
+            if role_obj is None:
+                await ctx.send("**Please make sure the `{}` roles exist!**".format(role_name))
+            else:
+                server_roles = db.roles.find_one({"server_id": str(server.id)})
+                if not server_roles:
+                    new_server = {
+                        "server_id": str(server.id),
+                        "roles": {role_name: {"level": str(level), "remove_role": remove_role}},
+                    }
+                    db.roles.insert_one(new_server)
+                else:
+                    if role_name not in server_roles["roles"]:
+                        server_roles["roles"][role_name] = {}
+
+                    server_roles["roles"][role_name]["level"] = str(level)
+                    server_roles["roles"][role_name]["remove_role"] = remove_role
+                    db.roles.update_one(
+                        {"server_id": str(server.id)}, {"$set": {"roles": server_roles["roles"]}}
+                    )
+
+                await ctx.send(
+                    "**The `{}` role has been linked to level `{}`**".format(role_name, level)
+                )
+
