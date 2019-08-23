@@ -49,6 +49,9 @@ class Leveler(commands.Cog):
             "removed_backgrounds": {"profile": [], "rank": [], "levelup": []},
             "backgrounds": {"profile": {}, "rank": {}, "levelup": {}},
             "xp": [15, 20],
+            "default_profile": "http://i.imgur.com/8T1FUP5.jpg",
+            "default_rank": "http://i.imgur.com/SorwIrc.jpg",
+            "default_levelup": "http://i.imgur.com/eEFfKqa.jpg",
         }
         default_guild = {
             "disabled": False,
@@ -65,7 +68,7 @@ class Leveler(commands.Cog):
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
     def cog_unload(self):
-        self.session.detach()
+        self.bot.loop.create_task(self.session.close())
 
     @property
     def DEFAULT_BGS(self):
@@ -1285,23 +1288,31 @@ class Leveler(commands.Cog):
 
     @lvladmin.command()
     @checks.is_owner()
-    async def xp(self, ctx, min_xp:int = None, max_xp:int = None):
+    async def xp(self, ctx, min_xp: int = None, max_xp: int = None):
         """Set the range for the xp given on each successful xp gain.
         Leaving the entries blank will reset the xp to the default."""
         if not (min_xp and max_xp):
             await self.config.xp.set([15, 20])
-            return await ctx.send("XP given has been reset to the default range of 15-20 xp per message.")
+            return await ctx.send(
+                "XP given has been reset to the default range of 15-20 xp per message."
+            )
         elif not max_xp:
             return await ctx.send(f"Enter the values as a range: `{ctx.prefix}lvladmin xp 15 20`")
         elif (max_xp or min_xp) > 1000:
-            return await ctx.send("Don't you think that number is a bit high? That might break things. Try something under 1k xp.")
+            return await ctx.send(
+                "Don't you think that number is a bit high? That might break things. Try something under 1k xp."
+            )
         elif min_xp >= max_xp:
-            return await ctx.send("The minimum xp amount needs to be less than the maximum xp amount.")
+            return await ctx.send(
+                "The minimum xp amount needs to be less than the maximum xp amount."
+            )
         elif (min_xp or max_xp) <= 0:
-            return await ctx.send("The xp amounts can't be zero or less.") 
+            return await ctx.send("The xp amounts can't be zero or less.")
         else:
             await self.config.xp.set([min_xp, max_xp])
-            await ctx.send(f"XP given has been set to a range of {min_xp} to {max_xp} xp per message.")
+            await ctx.send(
+                f"XP given has been set to a range of {min_xp} to {max_xp} xp per message."
+            )
 
     @commands.group()
     async def badge(self, ctx):
@@ -1999,7 +2010,7 @@ class Leveler(commands.Cog):
     @lvladminbg.command()
     @commands.guild_only()
     async def setcustombg(self, ctx, bg_type: str, user_id: str, img_url: str):
-        """Set one-time custom background"""
+        """Set one-time custom profile background"""
         valid_types = ["profile", "rank", "levelup"]
         type_input = bg_type.lower()
 
@@ -2025,10 +2036,74 @@ class Leveler(commands.Cog):
     @checks.is_owner()
     @lvladminbg.command()
     @commands.guild_only()
+    async def defaultprofilebg(self, ctx, name: str):
+        """Set a profile background as the new default profile background for new users.
+        The profile bg must be in the existing profile background list.
+        Does not convert existing users to the new default."""
+        bgs = await self.get_backgrounds()
+        if name in bgs["profile"].keys():
+            await self.config.default_profile.set(bgs["profile"][name])
+            return await ctx.send(
+                "**The profile background (`{}`) has been set as the new default.**".format(name)
+            )
+        else:
+            return await ctx.send("**That profile background name doesn't exist.**")
+
+    @checks.is_owner()
+    @lvladminbg.command()
+    @commands.guild_only()
+    async def defaultrankbg(self, ctx, name: str):
+        """Set a rank background as the new default rank background for new users.
+        The rank bg must be in the existing rank background list.
+        Does not convert existing users to the new default."""
+        bgs = await self.get_backgrounds()
+        if name in bgs["rank"].keys():
+            await self.config.default_rank.set(bgs["rank"][name])
+            return await ctx.send(
+                "**The rank background (`{}`) has been set as the new default.**".format(name)
+            )
+        else:
+            return await ctx.send("**That rank background name doesn't exist.**")
+
+    @checks.is_owner()
+    @lvladminbg.command()
+    @commands.guild_only()
+    async def defaultlevelbg(self, ctx, name: str):
+        """Set a levelup background as the new default levelup background for new users.
+        The levelup bg must be in the existing levelup background list.
+        Does not convert existing users to the new default."""
+        bgs = await self.get_backgrounds()
+        if name in bgs["levelup"].keys():
+            await self.config.default_levelup.set(bgs["levelup"][name])
+            return await ctx.send(
+                "**The levelup background (`{}`) has been set as the new default.**".format(name)
+            )
+        else:
+            return await ctx.send("**That levelup background name doesn't exist.**")
+
+    @checks.is_owner()
+    @lvladminbg.command()
+    @commands.guild_only()
     async def delprofilebg(self, ctx, name: str):
         """Delete a profile background."""
+        backgrounds = await self.get_backgrounds()
+        if len(backgrounds["profile"]) == 1:
+            return await ctx.send(
+                "**Add more profile backgrounds with** `{}lvladmin bg addprofilebg` **before removing the last one!**".format(
+                    ctx.prefix
+                )
+            )
+        default_profile = await self.config.default_profile()
         try:
-            await self.delete_background("profile", name)
+            if backgrounds["profile"][name] == default_profile:
+                msg = (
+                    "**That profile background is currently set as the default.**\n"
+                    "Use `{}lvladmin bg defaultprofilebg` to set a new default profile background.\n"
+                    "Then run `{}lvladmin bg delprofilebg {}` again once you have set the new default."
+                ).format(ctx.prefix, ctx.prefix, name)
+                return await ctx.send(msg)
+            else:
+                await self.delete_background("profile", name)
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
@@ -2041,8 +2116,24 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def delrankbg(self, ctx, name: str):
         """Delete a rank background."""
+        backgrounds = await self.get_backgrounds()
+        if len(backgrounds["rank"]) == 1:
+            return await ctx.send(
+                "**Add more rank backgrounds with** `{}lvladmin bg addrankbg` **before removing the last one!**".format(
+                    ctx.prefix
+                )
+            )
+        default_rank = await self.config.default_rank()
         try:
-            await self.delete_background("rank", name)
+            if backgrounds["rank"][name] == default_rank:
+                msg = (
+                    "**That rank background is currently set as the default.**\n"
+                    "Use `{}lvladmin bg defaultrankbg` to set a new default rank background.\n"
+                    "Then run `{}lvladmin bg delrankbg {}` again once you have set the new default."
+                ).format(ctx.prefix, ctx.prefix, name)
+                return await ctx.send(msg)
+            else:
+                await self.delete_background("rank", name)
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
@@ -2055,8 +2146,24 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def dellevelbg(self, ctx, name: str):
         """Delete a level background."""
+        backgrounds = await self.get_backgrounds()
+        if len(backgrounds["levelup"]) == 1:
+            return await ctx.send(
+                "**Add more level up backgrounds with** `{}lvladmin bg addlevelbg` **before removing the last one!**".format(
+                    ctx.prefix
+                )
+            )
+        default_levelup = await self.config.default_levelup()
         try:
-            await self.delete_background("levelup", name)
+            if backgrounds["levelup"][name] == default_levelup:
+                msg = (
+                    "**That levelup background is currently set as the default.**\n"
+                    "Use `{}lvladmin bg defaultlevelbg` to set a new default levelup background.\n"
+                    "Then run `{}lvladmin bg dellevelbg {}` again once you have set the new default."
+                ).format(ctx.prefix, ctx.prefix, name)
+                return await ctx.send(msg)
+            else:
+                await self.delete_background("levelup", name)
         except KeyError:
             return await ctx.send("**That profile background name doesn't exist.**")
         else:
@@ -2281,9 +2388,7 @@ class Leveler(commands.Cog):
         border = int(total_gap / 2)
         profile_size = lvl_circle_dia - total_gap
         mask = mask.resize((profile_size, profile_size), Image.ANTIALIAS)
-        profile_image = profile_image.resize(
-            (profile_size, profile_size), Image.ANTIALIAS
-        )
+        profile_image = profile_image.resize((profile_size, profile_size), Image.ANTIALIAS)
         process.paste(profile_image, (circle_left + border, circle_top + border), mask)
 
         # write label text
@@ -2676,7 +2781,7 @@ class Leveler(commands.Cog):
         userinfo = db.users.find_one({"user_id": str(user.id)})
         # get urls
         bg_url = userinfo["rank_background"]
-        server_icon_url = server.icon_url_as(format='png', size=256)
+        server_icon_url = server.icon_url_as(format="png", size=256)
 
         # guild icon image
         if not server_icon_url._url:
@@ -2805,14 +2910,10 @@ class Leveler(commands.Cog):
         profile_size = lvl_circle_dia - total_gap
         raw_length = profile_size * multiplier
         # put in profile picture
-        output = ImageOps.fit(
-            profile_image, (raw_length, raw_length), centering=(0.5, 0.5)
-        )
+        output = ImageOps.fit(profile_image, (raw_length, raw_length), centering=(0.5, 0.5))
         output.resize((profile_size, profile_size), Image.ANTIALIAS)
         mask = mask.resize((profile_size, profile_size), Image.ANTIALIAS)
-        profile_image = profile_image.resize(
-            (profile_size, profile_size), Image.ANTIALIAS
-        )
+        profile_image = profile_image.resize((profile_size, profile_size), Image.ANTIALIAS)
         process.paste(profile_image, (circle_left + border, circle_top + border), mask)
 
         # draw level box
@@ -3305,6 +3406,10 @@ class Leveler(commands.Cog):
     # handles user creation, adding new server, blocking
     async def _create_user(self, user, server):
         backgrounds = await self.get_backgrounds()
+        default_profile = await self.config.default_profile()
+        default_rank = await self.config.default_rank()
+        default_levelup = await self.config.default_levelup()
+
         if user.bot:
             return
         try:
@@ -3315,9 +3420,9 @@ class Leveler(commands.Cog):
                     "username": user.name,
                     "servers": {},
                     "total_exp": 0,
-                    "profile_background": backgrounds["profile"]["default"],
-                    "rank_background": backgrounds["rank"]["default"],
-                    "levelup_background": backgrounds["levelup"]["default"],
+                    "profile_background": default_profile,
+                    "rank_background": default_rank,
+                    "levelup_background": default_levelup,
                     "title": "",
                     "info": "I am a mysterious person.",
                     "rep": 0,
@@ -3388,7 +3493,7 @@ class Leveler(commands.Cog):
                 if ord(unicode_char) in cmap.cmap:
                     return True
         return False
-    
+
     @checks.is_owner()
     @lvladmin.command()
     @commands.guild_only()
@@ -3401,7 +3506,7 @@ class Leveler(commands.Cog):
             async with self.session.get(
                 f"https://mee6.xyz/api/plugins/levels/leaderboard/{ctx.guild.id}?page={i}&limit=999"
             ) as r:
-                
+
                 if r.status == 200:
                     data = await r.json()
                 else:
@@ -3492,4 +3597,3 @@ class Leveler(commands.Cog):
                 await ctx.send(
                     "**The `{}` role has been linked to level `{}`**".format(role_name, level)
                 )
-
