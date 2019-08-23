@@ -3408,19 +3408,17 @@ class Leveler(commands.Cog):
                     return await ctx.send("No data was found within the Mee6 API.")
 
             for userdata in data["players"]:
-                user = self.bot.get_user(int(userdata["id"]))
-                if user is None:
+                # _handle_levelup requires a Member
+                user = ctx.guild.get_member(int(userdata["id"]))
+
+                if not user:
                     failed += 1
                     continue
 
                 level = userdata["level"]
                 server = ctx.guild
                 channel = ctx.channel
-				
-                if user not in server.members:
-                    failed += 1
-                    continue
-				
+
                 # creates user if doesn't exist
                 await self._create_user(user, server)
                 userinfo = db.users.find_one({"user_id": str(user.id)})
