@@ -3394,7 +3394,8 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def mee6convertlevels(self, ctx, pages: int):
         """Convert Mee6 levels.
-        Each page returns 999 users at most."""
+        Each page returns 999 users at most.
+        This command must be run in a channel in the guild to be converted."""
         failed = 0
         for i in range(pages):
             async with self.session.get(
@@ -3411,9 +3412,15 @@ class Leveler(commands.Cog):
                 if user is None:
                     failed += 1
                     continue
+
                 level = userdata["level"]
                 server = ctx.guild
                 channel = ctx.channel
+				
+                if user not in server.members:
+                    failed += 1
+                    continue
+				
                 # creates user if doesn't exist
                 await self._create_user(user, server)
                 userinfo = db.users.find_one({"user_id": str(user.id)})
@@ -3448,7 +3455,8 @@ class Leveler(commands.Cog):
     @lvladmin.command()
     @commands.guild_only()
     async def mee6convertranks(self, ctx):
-        """Convert Mee6 role rewards."""
+        """Convert Mee6 role rewards.
+        This command must be run in a channel in the guild to be converted."""
         async with self.session.get(
             f"https://mee6.xyz/api/plugins/levels/leaderboard/{ctx.guild.id}"
         ) as r:
