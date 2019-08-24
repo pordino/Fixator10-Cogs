@@ -1045,16 +1045,25 @@ class Leveler(commands.Cog):
 
         num_users = len(list(db.users.find({})))
 
+        default_profile = await self.config.default_profile()
+        default_rank = await self.config.default_rank()
+        default_levelup = await self.config.default_levelup()
+
         msg = ""
         msg += "**Servers:** {}\n".format(len(self.bot.guilds))
         msg += "**Unique Users:** {}\n".format(num_users)
-        msg += "**Mentions:** {}\n".format(await self.config.guild(guild).mentions())
+        msg += "**Mentions on in {}:** {}\n".format(
+            ctx.guild.name, await self.config.guild(guild).mentions()
+        )
         msg += "**Background Price:** {}\n".format(await self.config.bg_price())
         msg += "**Badge type:** {}\n".format(await self.config.badge_type())
         msg += "**Disabled Servers:** {}\n".format(", ".join(disabled_servers))
         msg += "**Enabled Level Messages:** {}\n".format(", ".join(disabled_levels))
         msg += "**Private Level Messages:** {}\n".format(", ".join(private_levels))
         msg += "**Channel Locks:** {}\n".format(", ".join(locked_channels))
+        msg += "**Default Profile Background:** {}\n".format(default_profile)
+        msg += "**Default Rank Background:** {}\n".format(default_rank)
+        msg += "**Default Levelup Background:** {}\n".format(default_levelup)
         em = discord.Embed(description=msg, colour=await ctx.embed_color())
         em.set_author(name="Settings Overview for {}".format(self.bot.user.name))
         await ctx.send(embed=em)
@@ -3501,6 +3510,21 @@ class Leveler(commands.Cog):
         """Convert Mee6 levels.
         Each page returns 999 users at most.
         This command must be run in a channel in the guild to be converted."""
+        if await self.config.guild(ctx.guild).mentions():
+            msg = (
+                "**{}, levelup mentions are on in this server.**\n"
+                "The bot will ping every user that will be leveled up through this process if you continue.\n"
+                "Reply with `yes` if you want this conversion to continue.\n"
+                "If not, reply with `no` and then run `{}lvladmin mention` to turn off mentions before running this command again."
+            ).format(ctx.author.display_name, ctx.prefix)
+            await ctx.send(msg)
+            pred = MessagePredicate.yes_or_no(ctx)
+            try:
+                await self.bot.wait_for("message", check=pred, timeout=15)
+            except TimeoutError:
+                await ctx.send("**Timed out waiting for a response.**")
+            if pred.result is False:
+                return await ctx.send("**Command cancelled.**")
         failed = 0
         for i in range(pages):
             async with self.session.get(
