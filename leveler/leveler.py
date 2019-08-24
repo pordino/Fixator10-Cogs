@@ -52,6 +52,7 @@ class Leveler(commands.Cog):
             "default_profile": "http://i.imgur.com/8T1FUP5.jpg",
             "default_rank": "http://i.imgur.com/SorwIrc.jpg",
             "default_levelup": "http://i.imgur.com/eEFfKqa.jpg",
+            "rep_price": 0,
         }
         default_guild = {
             "disabled": False,
@@ -270,6 +271,11 @@ class Leveler(commands.Cog):
     async def top(self, ctx, *options):
         """Displays the leaderboard. 
         Add -global parameter for global and -rep for reputation."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
+
         server = ctx.guild
         user = ctx.author
 
@@ -449,10 +455,65 @@ class Leveler(commands.Cog):
                 )
             )
 
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.command()
+    @commands.guild_only()
+    async def represet(self, ctx):
+        """Reset your rep cooldown for a price."""
+        if await self.config.guild(ctx.guild).disabled():
+            return await ctx.send("**Leveler commands for this server are disabled!**")
+
+        rep_price = await self.config.rep_price()
+        if rep_price == 0:
+            return await ctx.send(
+                "**Rep resets are not set up. Ask the bot owner to provide a rep reset cost.**"
+            )
+
+        user = ctx.author
+        server = ctx.guild
+        # creates user if doesn't exist
+        await self._create_user(user, server)
+
+        userinfo = db.users.find_one({"user_id": str(user.id)})
+        if "rep_block" not in userinfo:
+            org_userinfo["rep_block"] = 0
+
+        curr_time = time.time()
+        delta = float(curr_time) - float(userinfo["rep_block"])
+        if delta >= 43200.0 and delta > 0:
+            return await ctx.send("**You can give a rep without resetting your rep cooldown!**")
+
+        if not await bank.can_spend(user, rep_price):
+            await ctx.send("**Insufficient funds. Rep resets cost: ${}**".format(rep_price))
+        else:
+            currency_name = await bank.get_currency_name(ctx.guild)
+            await ctx.send(
+                "**{}, you are about to reset your rep cooldown for `{}` {}. Confirm by typing `yes`.**".format(
+                    await self._is_mention(user), rep_price, currency_name
+                )
+            )
+            pred = MessagePredicate.yes_or_no(ctx)
+            try:
+                await self.bot.wait_for("message", check=pred, timeout=15)
+            except TimeoutError:
+                return await ctx.send("**Purchase canceled.**")
+            if not pred.result:
+                return await ctx.send("**Purchase canceled.**")
+
+            await bank.withdraw_credits(user, rep_price)
+            db.users.update_one(
+                {"user_id": str(user.id)}, {"$set": {"rep_block": (float(curr_time) - 43201.0)}}
+            )
+            await ctx.send("**You have reset your rep cooldown!**")
+
     @commands.command()
     @commands.guild_only()
     async def lvlinfo(self, ctx, user: discord.Member = None):
         """Gives more specific details about a user's profile."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
         if not user:
             user = ctx.author
         server = ctx.guild
@@ -1021,8 +1082,12 @@ class Leveler(commands.Cog):
     @lvladmin.group(invoke_without_command=True)
     async def overview(self, ctx):
         """A list of settings."""
-        user = ctx.author
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
 
+        user = ctx.author
         disabled_servers = []
         private_levels = []
         disabled_levels = []
@@ -1056,6 +1121,7 @@ class Leveler(commands.Cog):
             ctx.guild.name, await self.config.guild(guild).mentions()
         )
         msg += "**Background Price:** {}\n".format(await self.config.bg_price())
+        msg += "**Rep Reset Price:** {}\n".format(await self.config.rep_price())
         msg += "**Badge type:** {}\n".format(await self.config.badge_type())
         msg += "**Disabled Servers:** {}\n".format(", ".join(disabled_servers))
         msg += "**Enabled Level Messages:** {}\n".format(", ".join(disabled_levels))
@@ -1162,13 +1228,24 @@ class Leveler(commands.Cog):
     @checks.is_owner()
     @lvladmin.command()
     @commands.guild_only()
-    async def setprice(self, ctx, price: int):
+    async def setbgprice(self, ctx, price: int):
         """Set a price for background changes."""
         if price < 0:
             await ctx.send("**That is not a valid background price.**")
         else:
             await self.config.bg_price.set(price)
             await ctx.send(f"**Background price set to: `{price}`!**")
+
+    @checks.is_owner()
+    @lvladmin.command()
+    @commands.guild_only()
+    async def setrepprice(self, ctx, price: int):
+        """Set a price for rep resets."""
+        if price < 0:
+            await ctx.send("**That is not a valid rep reset price.**")
+        else:
+            await self.config.rep_price.set(price)
+            await ctx.send(f"**Rep reset price set to: `{price}`!**")
 
     @checks.is_owner()
     @lvladmin.command()
@@ -1332,6 +1409,11 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def available(self, ctx):
         """Get a list of available badges for server or global."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
+
         user = ctx.author
         server = ctx.guild
 
@@ -1387,6 +1469,11 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def listuserbadges(self, ctx, user: discord.Member = None):
         """List the badges of a user."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
+
         if user is None:
             user = ctx.author
         server = ctx.guild
@@ -1844,6 +1931,11 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def listbadge(self, ctx):
         """List badge/level associations."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
+
         server = ctx.guild
 
         server_badges = db.badgelinks.find_one({"server_id": str(server.id)})
@@ -1939,6 +2031,11 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def listrole(self, ctx):
         """List role/level associations."""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
+
         server = ctx.guild
         user = ctx.author
 
@@ -2184,6 +2281,10 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def disp_backgrounds(self, ctx, bg_type):
         """Gives a list of backgrounds. [p]backgrounds [profile|rank|levelup]"""
+        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
+            return await ctx.send(
+                "**I need the **`Embed Links`** permission to send this message!**"
+            )
         server = ctx.guild
         backgrounds = await self.get_backgrounds()
 
