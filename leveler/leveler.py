@@ -476,7 +476,7 @@ class Leveler(commands.Cog):
 
         userinfo = db.users.find_one({"user_id": str(user.id)})
         if "rep_block" not in userinfo:
-            org_userinfo["rep_block"] = 0
+            userinfo["rep_block"] = 0
 
         curr_time = time.time()
         delta = float(curr_time) - float(userinfo["rep_block"])
