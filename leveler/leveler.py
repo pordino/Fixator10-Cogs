@@ -3522,7 +3522,7 @@ class Leveler(commands.Cog):
             try:
                 await self.bot.wait_for("message", check=pred, timeout=15)
             except TimeoutError:
-                await ctx.send("**Timed out waiting for a response.**")
+                return await ctx.send("**Timed out waiting for a response.**")
             if pred.result is False:
                 return await ctx.send("**Command cancelled.**")
         failed = 0
