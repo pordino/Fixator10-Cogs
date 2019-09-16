@@ -3520,8 +3520,6 @@ class Leveler(commands.Cog):
         default_rank = await self.config.default_rank()
         default_levelup = await self.config.default_levelup()
 
-        if user.bot:
-            return
         try:
             userinfo = db.users.find_one({"user_id": str(user.id)})
             if not userinfo:
