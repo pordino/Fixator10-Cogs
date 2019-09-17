@@ -1118,7 +1118,7 @@ class Leveler(commands.Cog):
         msg += "**Servers:** {}\n".format(len(self.bot.guilds))
         msg += "**Unique Users:** {}\n".format(num_users)
         msg += "**Mentions on in {}:** {}\n".format(
-            ctx.guild.name, await self.config.guild(guild).mentions()
+            ctx.guild.name, await self.config.guild(ctx.guild).mentions()
         )
         msg += "**Background Price:** {}\n".format(await self.config.bg_price())
         msg += "**Rep Reset Price:** {}\n".format(await self.config.rep_price())
