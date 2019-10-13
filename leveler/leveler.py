@@ -1575,8 +1575,8 @@ class Leveler(commands.Cog):
                                     {"$set": {"badges": userinfo["badges"]}},
                                 )
                                 await ctx.send(
-                                    "**You have bought the `{}` badge for `{}`.**".format(
-                                        name, badge_info["price"]
+                                    "**You have bought the `{}` badge for `{}`.\nSet it on your profile by using** `{}badge set` **next.**".format(
+                                        name, badge_info["price"], ctx.prefix
                                     )
                                 )
                             elif await bank.get_balance(user) < badge_info["price"]:
