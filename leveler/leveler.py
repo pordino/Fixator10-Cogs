@@ -134,6 +134,7 @@ class Leveler(commands.Cog):
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(name="profile")
+    @commands.bot_has_permissions(attach_files=True)
     @commands.guild_only()
     async def profile(self, ctx, *, user: discord.Member = None):
         """Displays a user profile."""
@@ -203,6 +204,7 @@ class Leveler(commands.Cog):
         return em
 
     @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.command()
     @commands.guild_only()
     async def rank(self, ctx, user: discord.Member = None):
@@ -266,16 +268,12 @@ class Leveler(commands.Cog):
             return user.name
 
     @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.bot_has_permissions(embed_links=True)
     @commands.command()
     @commands.guild_only()
     async def top(self, ctx, *options):
         """Displays the leaderboard. 
         Add -global parameter for global and -rep for reputation."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         server = ctx.guild
         user = ctx.author
 
@@ -507,13 +505,10 @@ class Leveler(commands.Cog):
             await ctx.send("**You have reset your rep cooldown!**")
 
     @commands.command()
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def lvlinfo(self, ctx, user: discord.Member = None):
         """Gives more specific details about a user's profile."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
         if not user:
             user = ctx.author
         server = ctx.guild
@@ -1079,14 +1074,10 @@ class Leveler(commands.Cog):
         pass
 
     @checks.admin_or_permissions(manage_guild=True)
+    @commands.bot_has_permissions(embed_links=True)
     @lvladmin.group(invoke_without_command=True)
     async def overview(self, ctx):
         """A list of settings."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         user = ctx.author
         disabled_servers = []
         private_levels = []
@@ -1406,14 +1397,10 @@ class Leveler(commands.Cog):
         pass
 
     @badge.command(name="available")
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def available(self, ctx):
         """Get a list of available badges for server or global."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         user = ctx.author
         server = ctx.guild
 
@@ -1466,14 +1453,10 @@ class Leveler(commands.Cog):
                 counter += 1
 
     @badge.command(name="list")
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def listuserbadges(self, ctx, user: discord.Member = None):
         """List the badges of a user."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         if user is None:
             user = ctx.author
         server = ctx.guild
@@ -1928,14 +1911,10 @@ class Leveler(commands.Cog):
 
     @checks.mod_or_permissions(manage_roles=True)
     @badge.command(name="listlinks")
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def listbadge(self, ctx):
         """List badge/level associations."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         server = ctx.guild
 
         server_badges = db.badgelinks.find_one({"server_id": str(server.id)})
@@ -2028,14 +2007,10 @@ class Leveler(commands.Cog):
             await ctx.send("**The `{}` role is not linked to any levels!**".format(role_name))
 
     @role.command(name="listlinks")
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def listrole(self, ctx):
         """List role/level associations."""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
-
         server = ctx.guild
         user = ctx.author
 
@@ -2278,13 +2253,10 @@ class Leveler(commands.Cog):
             )
 
     @commands.command(name="backgrounds")
+    @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def disp_backgrounds(self, ctx, bg_type):
         """Gives a list of backgrounds. [p]backgrounds [profile|rank|levelup]"""
-        if not ctx.message.channel.permissions_for(ctx.guild.me).embed_links:
-            return await ctx.send(
-                "**I need the **`Embed Links`** permission to send this message!**"
-            )
         server = ctx.guild
         backgrounds = await self.get_backgrounds()
 
