@@ -2348,7 +2348,13 @@ class Leveler(commands.Cog):
             image = await r.content.read()
         profile_background = BytesIO(image)
         profile_avatar = BytesIO()
-        await user.avatar_url.save(profile_avatar, seek_begin=True)
+        try:
+            await user.avatar_url.save(profile_avatar, seek_begin=True)
+        except discord.errors.NotFound:
+            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
+            async with self.session.get(blank_avatar_url) as r:
+                blank_avatar_image = await r.content.read()
+                profile_avatar = BytesIO(blank_avatar_image)
 
         bg_image = Image.open(profile_background).convert("RGBA")
         profile_image = Image.open(profile_avatar).convert("RGBA")
@@ -2882,7 +2888,13 @@ class Leveler(commands.Cog):
 
         # user icon image
         rank_avatar = BytesIO()
-        await user.avatar_url.save(rank_avatar, seek_begin=True)
+        try:
+            await user.avatar_url.save(rank_avatar, seek_begin=True)
+        except discord.errors.NotFound:
+            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
+            async with self.session.get(blank_avatar_url) as r:
+                blank_avatar_image = await r.content.read()
+                rank_avatar = BytesIO(blank_avatar_image)
 
         # set all to RGBA
         bg_image = Image.open(rank_background).convert("RGBA")
