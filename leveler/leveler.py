@@ -381,36 +381,38 @@ class Leveler(commands.Cog):
                     )
                     return
                 break
-
-        msg = ""
-        msg += f"Rank     Name                   (Page {page}/{pages})     \n\n"
-        rank = 1 + per_page * (page - 1)
         start_index = per_page * page - per_page
         end_index = per_page * page
-
+        top_user_value = 8 + len(str(sorted_list[start_index:end_index][0][1])) + 4
+        rank = 1 + per_page * (page - 1)
+        msg = ""
         default_label = "   "
         special_labels = ["♔", "♕", "♖", "♗", "♘", "♙"]
-
+        length = len(footer_text)
+        padding = None
         for single_user in sorted_list[start_index:end_index]:
             await asyncio.sleep(0)
             if rank - 1 < len(special_labels):
                 label = special_labels[rank - 1]
             else:
                 label = default_label
+            rank_text = f"{rank:<2}"
+            label_text = f"{label:<2}"
+            separator_text = f"{'➤':<3}"
+            if padding is None:
+                padding = len(rank_text), len(label_text), len(separator_text) + 1
+            point_text = f"# {'{}: {}'.format(board_type, single_user[1]).ljust(top_user_value, ' ')}"
+            nam_text = f"{self._truncate_text(single_user[0], 11):<5}\n"
 
-            msg += "{:<2}{:<2}{:<2} # {:<11}".format(
-                rank, label, "➤", " {}: ".format(board_type) + str(single_user[1])
-            )
-            msg += "{:>5}{:<2}{:<2}{:<5}\n".format(
-                " ", " ", " ", self._truncate_text(single_user[0], 11)
-            )
+            msg += rank_text + label_text + separator_text + point_text + nam_text
             rank += 1
-        msg += "--------------------------------------------            \n"
-        msg += f"{footer_text}"
-
-        em = discord.Embed(description="", colour=user.colour)
+        separator = "-"*length
+        rank_pad, level_pad, extra_pad = padding
+        header = f"{'Rank'.ljust(rank_pad+level_pad+extra_pad, ' ')}{board_type.ljust(top_user_value+2, ' ')}{'Name'.ljust(13, ' ')}\n\n"
+        msg += f"{separator}\n{footer_text}\nPage: {page}/{pages}"
+        msg = f"{header}{msg}"
+        em = discord.Embed(description=box(msg), colour=user.colour)
         em.set_author(name=title, icon_url=icon_url)
-        em.description = box(msg)
 
         await ctx.send(embed=em)
 
