@@ -12,6 +12,7 @@
   ],
   "requirements": [
     "pymongo",
+    "motor",
     "fonttools",
     "pillow>=6.2.1",
     "numpy",
