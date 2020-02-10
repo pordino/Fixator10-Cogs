@@ -75,11 +75,21 @@ class Leveler(commands.Cog):
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
         self._message_tasks = []
         self._message_task_processor = asyncio.create_task(self.process_tasks())
+        self._message_task_processor.add_done_callback(self._task_error_logger)
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
         if self._message_task_processor:
             self._message_task_processor.cancel()
+
+    def _task_error_logger(self, fut):
+        """Logs errors in the _message_task_processor task."""
+        try:
+            fut.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            log.critical("The leveler task encountered an unexpected error and has stopped.\n", exc_info=e)
 
     @property
     def DEFAULT_BGS(self):
@@ -3399,8 +3409,8 @@ class Leveler(commands.Cog):
                 {"user_id": str(user.id)}, {"$set": {"total_exp": userinfo["total_exp"] + exp}}
             )
             await asyncio.sleep(0)
-        except:
-            pass
+        except Exception as e:
+            log.warning(f"Could not add XP to {user}!\n", exc_info=e)
         if userinfo["servers"][str(server.id)]["current_exp"] + exp >= required:
             await asyncio.sleep(0)
             userinfo["servers"][str(server.id)]["level"] += 1
