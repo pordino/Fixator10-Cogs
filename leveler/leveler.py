@@ -356,7 +356,7 @@ class Leveler(commands.Cog):
                         except:
                             users.append((userinfo["user_id"], server_exp))
                 except Exception as e:
-                    print(e)
+                    log.debug(e, exc_info=e)
             board_type = "Points"
             footer_text = "Your Rank: {}                  {}: {}".format(
                 await self._find_server_rank(user, server),
@@ -3346,18 +3346,27 @@ class Leveler(commands.Cog):
                 tasks = copy(self._message_tasks)
                 self._message_tasks = []
                 for a in tasks:
-                    await self._process_user_on_message(*a)
-                    await asyncio.sleep(0.1)
-                await asyncio.sleep(60)
+                    try:
+                        await self._process_user_on_message(*a)
+                        await asyncio.sleep(0.1)
+                    except asyncio.CancelledError:
+                        raise asyncio.CancelledError
+                    except Exception as err:
+                        log.error(f"Error while giving XP to {a[0]}({a[0].id}) in {a[1]}({a[1].id})", exc_info=err)
+                log.debug("Process task sleeping for 30 seconds")
+                await asyncio.sleep(30)
 
     async def _process_user_on_message(self, user, server, message):  # Process a users message
         text = message.content
         curr_time = time.time()
+        log.debug(f"Processing {user} {server}")
         prefix = await self.bot.command_prefix(self.bot, message)
         # creates user if doesn't exist, bots are not logged.
         userinfo = await self._create_user(user, server)
         if not userinfo:
             return
+        user_id = f"{user.id}"
+        userinfo = await db.users.find_one({"user_id": user_id})
         # check if chat_block exists
         if "chat_block" not in userinfo:
             userinfo["chat_block"] = 0
@@ -3399,14 +3408,12 @@ class Leveler(commands.Cog):
                 {"user_id": str(user.id)},
                 {
                     "$set": {
-                        "servers.{}.level".format(server.id): userinfo["servers"][str(server.id)][
+                        f"servers.{server.id}.level": userinfo["servers"][str(server.id)][
                             "level"
                         ],
-                        "servers.{}.current_exp".format(server.id): userinfo["servers"][
+                        f"servers.{server.id}.current_exp": userinfo["servers"][
                             str(server.id)
-                        ]["current_exp"]
-                        + exp
-                        - required,
+                        ]["current_exp"] + exp - required,
                         "chat_block": time.time(),
                         "last_message": message.content,
                     }
@@ -3419,10 +3426,9 @@ class Leveler(commands.Cog):
                 {"user_id": str(user.id)},
                 {
                     "$set": {
-                        "servers.{}.current_exp".format(server.id): userinfo["servers"][
+                        f"servers.{server.id}.current_exp": userinfo["servers"][
                             str(server.id)
-                        ]["current_exp"]
-                        + exp,
+                        ]["current_exp"] + exp,
                         "chat_block": time.time(),
                         "last_message": message.content,
                     }
@@ -3654,8 +3660,7 @@ class Leveler(commands.Cog):
                     "rank_block": 0,
                 }
                 await db.users.insert_one(new_account)
-
-            userinfo = await db.users.find_one({"user_id": user_id})
+                userinfo = await db.users.find_one({"user_id": user_id})
 
             if "username" not in userinfo or userinfo["username"] != user.name:
                 await db.users.update_one(
@@ -3674,8 +3679,10 @@ class Leveler(commands.Cog):
                     upsert=True,
                 )
             return userinfo
-        except AttributeError:
-            pass
+        except AttributeError as err:
+            log.debug("error in user creation", exc_info=err)
+        except Exception as err:
+            log.debug("error in user creation", exc_info=err)
 
     @staticmethod
     def _truncate_text(text, max_length):
