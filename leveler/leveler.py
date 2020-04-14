@@ -282,9 +282,9 @@ class Leveler(commands.Cog):
         else:
             return user.name
 
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.guild)
     @commands.bot_has_permissions(embed_links=True)
-    @commands.command()
+    @commands.command(usage="[page] [-rep] [-global]")
     @commands.guild_only()
     async def top(self, ctx, *options):
         """Displays the leaderboard.
@@ -296,135 +296,131 @@ class Leveler(commands.Cog):
             await ctx.send("**Leveler commands for this server are disabled!**")
             return
 
-        users = []
-        user_stat = None
-        if "-rep" in options and "-global" in options:
-            title = f"Global Rep Leaderboard for {self.bot.user.name}\n"
-            async for userinfo in db.users.find({}):
-                await asyncio.sleep(0)
-                try:
-                    users.append((userinfo["username"], userinfo["rep"]))
-                except:
-                    users.append((userinfo["user_id"], userinfo["rep"]))
-
-                if str(user.id) == userinfo["user_id"]:
-                    user_stat = userinfo["rep"]
-
-            board_type = "Rep"
-            footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_global_rep_rank(user), board_type, user_stat
-            )
-            icon_url = self.bot.user.avatar_url
-        elif "-global" in options:
-            title = "Global Exp Leaderboard for {}\n".format(self.bot.user.name)
-            async for userinfo in db.users.find({}):
-                await asyncio.sleep(0)
-                try:
-                    users.append((userinfo["username"], userinfo["total_exp"]))
-                except:
-                    users.append((userinfo["user_id"], userinfo["total_exp"]))
-
-                if str(user.id) == userinfo["user_id"]:
-                    user_stat = userinfo["total_exp"]
-
-            board_type = "Points"
-            footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_global_rank(user), board_type, user_stat
-            )
-            icon_url = self.bot.user.avatar_url
-        elif "-rep" in options:
-            title = "Rep Leaderboard for {}\n".format(server.name)
-            async for userinfo in db.users.find({}):
-                await asyncio.sleep(0)
-                if "servers" in userinfo and str(server.id) in userinfo["servers"]:
+        async with ctx.typing():
+            users = []
+            user_stat = None
+            if "-rep" in options and "-global" in options:
+                title = "Global Rep Leaderboard for {}\n".format(self.bot.user.name)
+                async for userinfo in db.users.find({}):
+                    await asyncio.sleep(0)
                     try:
                         users.append((userinfo["username"], userinfo["rep"]))
-                    except:
+                    except KeyError:
                         users.append((userinfo["user_id"], userinfo["rep"]))
 
-                if str(user.id) == userinfo["user_id"]:
-                    user_stat = userinfo["rep"]
+                    if str(user.id) == userinfo["user_id"]:
+                        user_stat = userinfo["rep"]
 
-            board_type = "Rep"
-            footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_server_rep_rank(user, server), board_type, user_stat
-            )
-            icon_url = server.icon_url
-        else:
-            title = "Exp Leaderboard for {}\n".format(server.name)
-            async for userinfo in db.users.find({}):
-                await asyncio.sleep(0)
-                try:
+                board_type = "Rep"
+                footer_text = "Your Rank: {}                  {}: {}".format(
+                    await self._find_global_rep_rank(user), board_type, user_stat
+                )
+                icon_url = self.bot.user.avatar_url
+            elif "-global" in options:
+                title = "Global Exp Leaderboard for {}\n".format(self.bot.user.name)
+                async for userinfo in db.users.find({}):
+                    await asyncio.sleep(0)
+                    try:
+                        users.append((userinfo["username"], userinfo["total_exp"]))
+                    except KeyError:
+                        users.append((userinfo["user_id"], userinfo["total_exp"]))
+
+                    if str(user.id) == userinfo["user_id"]:
+                        user_stat = userinfo["total_exp"]
+
+                board_type = "Points"
+                footer_text = "Your Rank: {}                  {}: {}".format(
+                    await self._find_global_rank(user), board_type, user_stat
+                )
+                icon_url = self.bot.user.avatar_url
+            elif "-rep" in options:
+                title = "Rep Leaderboard for {}\n".format(server.name)
+                async for userinfo in db.users.find({}):
+                    await asyncio.sleep(0)
                     if "servers" in userinfo and str(server.id) in userinfo["servers"]:
-                        server_exp = 0
-                        for i in range(userinfo["servers"][str(server.id)]["level"]):
-                            await asyncio.sleep(0)
-                            server_exp += self._required_exp(i)
-                        server_exp += userinfo["servers"][str(server.id)]["current_exp"]
                         try:
-                            users.append((userinfo["username"], server_exp))
-                        except:
-                            users.append((userinfo["user_id"], server_exp))
-                except Exception as e:
-                    log.debug(e, exc_info=e)
-            board_type = "Points"
-            footer_text = "Your Rank: {}                  {}: {}".format(
-                await self._find_server_rank(user, server),
-                board_type,
-                await self._find_server_exp(user, server),
-            )
-            icon_url = server.icon_url
-        sorted_list = sorted(users, key=operator.itemgetter(1), reverse=True)
+                            users.append((userinfo["username"], userinfo["rep"]))
+                        except KeyError:
+                            users.append((userinfo["user_id"], userinfo["rep"]))
 
-        # multiple page support
-        page = 1
-        per_page = 15
-        pages = math.ceil(len(sorted_list) / per_page)
-        for option in options:
-            if str(option).isdigit():
-                await asyncio.sleep(0)
-                if page >= 1 and int(option) <= pages:
-                    page = int(str(option))
-                else:
-                    await ctx.send(
-                        "**Please enter a valid page number! (1 - {})**".format(str(pages))
-                    )
-                    return
-                break
-        start_index = per_page * page - per_page
-        end_index = per_page * page
-        top_user_value = 8 + len(str(sorted_list[start_index:end_index][0][1])) + 4
-        rank = 1 + per_page * (page - 1)
-        msg = ""
-        default_label = "   "
-        special_labels = ["♔", "♕", "♖", "♗", "♘", "♙"]
-        length = len(footer_text)
-        padding = None
-        for single_user in sorted_list[start_index:end_index]:
-            await asyncio.sleep(0)
-            if rank - 1 < len(special_labels):
-                label = special_labels[rank - 1]
+                    if str(user.id) == userinfo["user_id"]:
+                        user_stat = userinfo["rep"]
+
+                board_type = "Rep"
+                footer_text = "Your Rank: {}                  {}: {}".format(
+                    await self._find_server_rep_rank(user, server),
+                    board_type,
+                    user_stat,
+                )
+                icon_url = server.icon_url
             else:
-                label = default_label
-            rank_text = f"{rank:<2}"
-            label_text = f"{label:<2}"
-            separator_text = f"{'➤':<3}"
-            if padding is None:
+                title = "Exp Leaderboard for {}\n".format(server.name)
+                async for userinfo in db.users.find({}):
+                    await asyncio.sleep(0)
+                    try:
+                        if "servers" in userinfo and str(server.id) in userinfo["servers"]:
+                            server_exp = 0
+                            for i in range(userinfo["servers"][str(server.id)]["level"]):
+                                await asyncio.sleep(0)
+                                server_exp += self._required_exp(i)
+                            server_exp += userinfo["servers"][str(server.id)]["current_exp"]
+                            try:
+                                users.append((userinfo["username"], server_exp))
+                            except:
+                                users.append((userinfo["user_id"], server_exp))
+                    except Exception as e:
+                        log.debug(e, exc_info=e)
+                board_type = "Points"
+                footer_text = "Your Rank: {}                {}: {}".format(
+                    await self._find_server_rank(user, server),
+                    board_type,
+                    await self._find_server_exp(user, server),
+                )
+                icon_url = server.icon_url
+            sorted_list = sorted(users, key=operator.itemgetter(1), reverse=True)
+
+            # multiple page support
+            page = 1
+            per_page = 15
+            pages = math.ceil(len(sorted_list) / per_page)
+            for option in options:
+                if str(option).isdigit():
+                    if page >= 1 and int(option) <= pages:
+                        page = int(str(option))
+                    else:
+                        await ctx.send(
+                            "**Please enter a valid page number! (1 - {})**".format(
+                                str(pages)
+                            )
+                        )
+                        return
+                    break
+
+            msg = ""
+            rank = 1 + per_page * (page - 1)
+            start_index = per_page * page - per_page
+            end_index = per_page * page
+            top_user_value = 8 + len(str(sorted_list[start_index:end_index][0][1])) + 4
+
+            async for single_user in self.asyncit(sorted_list[start_index:end_index]):
+                await asyncio.sleep(0)
+                label = "   "
+                rank_text = f"{rank:<2}"
+                label_text = f"{label:<2}"
+                separator_text = f"{'➤':<3}"
                 padding = len(rank_text), len(label_text), len(separator_text) + 1
-            point_text = f"# {'{}: {}'.format(board_type, single_user[1]).ljust(top_user_value, ' ')}"
-            nam_text = f"{self._truncate_text(single_user[0], 11):<5}\n"
+                point_text = f"# {'{}: {}'.format(board_type, single_user[1]).ljust(top_user_value, ' ')}"
+                nam_text = f"{self._truncate_text(single_user[0], 11):<5}\n"
 
-            msg += rank_text + label_text + separator_text + point_text + nam_text
-            rank += 1
-        separator = "-"*length
-        rank_pad, level_pad, extra_pad = padding
-        header = f"{'Rank'.ljust(rank_pad+level_pad+extra_pad, ' ')}{board_type.ljust(top_user_value+2, ' ')}{'Name'.ljust(13, ' ')}\n\n"
-        msg += f"{separator}\n{footer_text}\nPage: {page}/{pages}"
-        msg = f"{header}{msg}"
-        em = discord.Embed(description=box(msg), colour=user.colour)
-        em.set_author(name=title, icon_url=icon_url)
+                msg += rank_text + label_text + separator_text + point_text + nam_text
+                rank += 1
+            separator = "-" * len(footer_text)
+            rank_pad, level_pad, extra_pad = padding
+            msg += f"{separator}\n{footer_text}\nPage: {page}/{pages}"
+            em = discord.Embed(description=box(msg), colour=user.colour)
+            em.set_author(name=title, icon_url=icon_url)
 
-        await ctx.send(embed=em)
+            await ctx.send(embed=em)
 
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command()
@@ -3701,6 +3697,11 @@ class Leveler(commands.Cog):
             log.debug("error in user creation", exc_info=err)
         except Exception as err:
             log.debug("error in user creation", exc_info=err)
+
+    async def asyncit(self, iterable):
+        for i in iterable:
+            yield i
+            await asyncio.sleep(0)
 
     @staticmethod
     def _truncate_text(text, max_length):
