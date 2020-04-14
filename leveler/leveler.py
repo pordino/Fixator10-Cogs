@@ -3446,81 +3446,89 @@ class Leveler(commands.Cog):
             )
 
     async def _handle_levelup(self, user, userinfo, server, channel):
-        if await self.config.guild(server).lvl_msg():  # if lvl msg is enabled
-            # channel lock implementation
-            channel_id = await self.config.guild(server).lvl_msg_lock()
-            if channel_id:
-                channel = find(lambda m: m.id == channel_id, server.channels)
+        # channel lock implementation
+        channel_id = await self.config.guild(server).lvl_msg_lock()
+        if channel_id:
+            channel = find(lambda m: m.id == channel_id, server.channels)
 
-            server_identifier = ""  # super hacky
-            name = await self._is_mention(user)  # also super hacky
-            # private message takes precedent, of course
-            if await self.config.guild(server).private_lvl_message():
-                server_identifier = f" on {server.name}"
-                channel = user
-                name = "You"
+        server_identifier = ""  # super hacky
+        name = await self._is_mention(user)  # also super hacky
+        # private message takes precedent, of course
+        if await self.config.guild(server).private_lvl_message():
+            server_identifier = f" on {server.name}"
+            channel = user
+            name = "You"
 
-            new_level = str(userinfo["servers"][str(server.id)]["level"])
-            server_roles = await db.roles.find_one({"server_id": str(server.id)})
-            await asyncio.sleep(0)
-            if server_roles is not None:
-                for role in server_roles["roles"].keys():
+        new_level = str(userinfo["servers"][str(server.id)]["level"])
+        self.bot.dispatch("leveler_levelup", user, new_level)
+        # add to appropriate role if necessary
+        # try:
+        server_roles = await db.roles.find_one({"server_id": str(server.id)})
+        await asyncio.sleep(0)
+        if server_roles is not None:
+            for role in server_roles["roles"].keys():
+                await asyncio.sleep(0)
+                if int(server_roles["roles"][role]["level"]) == int(new_level):
                     await asyncio.sleep(0)
-                    if int(server_roles["roles"][role]["level"]) == int(new_level):
+                    add_role = discord.utils.get(server.roles, name=role)
+                    if add_role is not None:
                         await asyncio.sleep(0)
-                        add_role = discord.utils.get(server.roles, name=role)
-                        if add_role is not None:
-                            await asyncio.sleep(0)
-                            try:
-                                await user.add_roles(add_role, reason="Levelup")
-                            except discord.Forbidden:
-                                await channel.send(
-                                    "Levelup role adding failed: Missing Permissions"
-                                )
-                            except discord.HTTPException:
-                                await channel.send("Levelup role adding failed")
-                        remove_role = discord.utils.get(
-                            server.roles, name=server_roles["roles"][role]["remove_role"]
-                        )
-                        if remove_role is not None:
-                            await asyncio.sleep(0)
-                            try:
-                                await user.remove_roles(remove_role, reason="Levelup")
-                            except discord.Forbidden:
-                                await channel.send(
-                                    "Levelup role removal failed: Missing Permissions"
-                                )
-                            except discord.HTTPException:
-                                await channel.send("Levelup role removal failed")
-                        # await user.edit(roles=new_roles, reason="Levelup")
-
-            # add appropriate badge if necessary
+                        try:
+                            await user.add_roles(add_role, reason="Levelup")
+                        except discord.Forbidden:
+                            await channel.send(
+                                "Levelup role adding failed: Missing Permissions"
+                            )
+                        except discord.HTTPException:
+                            await channel.send("Levelup role adding failed")
+                    remove_role = discord.utils.get(
+                        server.roles, name=server_roles["roles"][role]["remove_role"]
+                    )
+                    if remove_role is not None:
+                        await asyncio.sleep(0)     
+                        try:
+                            await user.remove_roles(remove_role, reason="Levelup")
+                        except discord.Forbidden:
+                            await channel.send(
+                                "Levelup role removal failed: Missing Permissions"
+                            )
+                        except discord.HTTPException:
+                            await channel.send("Levelup role removal failed")
+        try:
+            server_linked_badges = await db.badgelinks.find_one(
+                {"server_id": str(server.id)}
+            )
             await asyncio.sleep(0)
-            try:
-                server_linked_badges = await db.badgelinks.find_one({"server_id": str(server.id)})
-                if server_linked_badges is not None:
-                    for badge_name in server_linked_badges["badges"]:
+            if server_linked_badges is not None:
+                for badge_name in server_linked_badges["badges"]:
+                    await asyncio.sleep(0)
+                    if int(server_linked_badges["badges"][badge_name]) == int(
+                        new_level
+                    ):
+                        server_badges = await db.badges.find_one(
+                            {"server_id": str(server.id)}
+                        )
                         await asyncio.sleep(0)
-                        if int(server_linked_badges["badges"][badge_name]) == int(new_level):
-                            server_badges = await db.badges.find_one({"server_id": str(server.id)})
+                        if (
+                            server_badges is not None
+                            and badge_name in server_badges["badges"].keys()
+                        ):
                             await asyncio.sleep(0)
-                            if (
-                                server_badges is not None
-                                and badge_name in server_badges["badges"].keys()
-                            ):
-                                await asyncio.sleep(0)
-                                userinfo_db = await db.users.find_one({"user_id": str(user.id)})
-                                new_badge_name = "{}_{}".format(badge_name, server.id)
-                                userinfo_db["badges"][new_badge_name] = server_badges["badges"][
-                                    badge_name
-                                ]
-                                await db.users.update_one(
-                                    {"user_id": str(user.id)},
-                                    {"$set": {"badges": userinfo_db["badges"]}},
-                                )
-            except:
-                await channel.send("Error. Badge was not given!")
+                            userinfo_db = await db.users.find_one(
+                                {"user_id": str(user.id)}
+                            )
+                            new_badge_name = "{}_{}".format(badge_name, server.id)
+                            userinfo_db["badges"][new_badge_name] = server_badges[
+                                "badges"
+                            ][badge_name]
+                            await db.users.update_one(
+                                {"user_id": str(user.id)},
+                                {"$set": {"badges": userinfo_db["badges"]}},
+                            )
+        except Exception as exc:
+            await channel.send(f"Error. Badge was not given: {exc}")
 
+        if await self.config.guild(server).lvl_msg():  # if lvl msg is enabled
             if await self.config.guild(server).text_only():
                 async with channel.typing():
                     em = discord.Embed(
@@ -3537,9 +3545,9 @@ class Leveler(commands.Cog):
                         f"{cog_data_path(self)}/{user.id}_level.png", filename="levelup.png"
                     )
                     await channel.send(
-                        "**{} just gained a level{}!**".format(name, server_identifier), file=file
+                        "**{} just gained a level{}!**".format(name, server_identifier),
+                        file=file,
                     )
-            self.bot.dispatch("leveler_levelup", user, new_level)
 
     async def _find_server_rank(self, user, server):
         targetid = str(user.id)
