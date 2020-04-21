@@ -1467,21 +1467,16 @@ class Leveler(commands.Cog):
     @commands.guild_only()
     async def available(self, ctx):
         """Get a list of available badges for server or global."""
-        # user = ctx.author
-        server = ctx.guild
-
-        # get server stuff
         ids = [
             ("global", "Global", self.bot.user.avatar_url),
-            (server.id, server.name, server.icon_url),
+            (ctx.guild.id, ctx.guild.name, ctx.guild.icon_url),
         ]
 
-        # title_text = "**Available Badges**"
-        index = 0
+        global_list = []
+        server_list = []
+
         for serverid, servername, icon_url in ids:
             await asyncio.sleep(0)
-            em = discord.Embed(colour=await ctx.embed_color())
-            em.set_author(name="{}".format(servername), icon_url=icon_url)
             msg = ""
             server_badge_info = await db.badges.find_one({"server_id": str(serverid)})
             if server_badge_info:
@@ -1501,24 +1496,24 @@ class Leveler(commands.Cog):
                             badgename, price, badgeinfo["description"]
                         )
                 else:
-                    msg = "None"
+                    msg = "None."
             else:
-                msg = "None"
+                msg = "None."
 
-            em.description = msg
-
-            total_pages = len(list(pagify(msg)))
-
-            counter = 1
-            for page in pagify(msg, ["\n"]):
-                if index == 0:
-                    await ctx.send(page, embed=em)
+            total_pages = len(list(pagify(msg, ["\n"], page_length=1500)))
+            page_num = 1
+            for page in pagify(msg, ["\n"], page_length=1500):
+                em = discord.Embed(colour=await ctx.embed_color(), description=page)
+                em.set_author(name="{}".format(servername), icon_url=icon_url)
+                em.set_footer(text="Page {} of {}".format(page_num, total_pages))
+                page_num += 1
+                if serverid == "global":
+                    global_list.append(em)
                 else:
-                    await ctx.send(embed=em)
-                index += 1
+                    server_list.append(em)
 
-                em.set_footer(text="Page {} of {}".format(counter, total_pages))
-                counter += 1
+        for embed in global_list + server_list:
+            await ctx.send(embed=embed)
 
     @badge.command(name="list")
     @commands.bot_has_permissions(embed_links=True)
