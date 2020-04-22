@@ -1540,7 +1540,7 @@ class Leveler(commands.Cog):
 
         badge_ranks = ""
         counter = 1
-        for badge, priority_num in sorted_badges[:12]:
+        for badge, priority_num in sorted_badges:
             badge_ranks += "**{}. {}** ({}) [{}] **—** {}\n".format(
                 counter,
                 badge["badge_name"],
@@ -1552,19 +1552,20 @@ class Leveler(commands.Cog):
         if not badge_ranks:
             badge_ranks = "None"
 
-        em = discord.Embed(colour=user.colour)
-
-        total_pages = len(list(pagify(badge_ranks)))
+        total_pages = len(list(pagify(badge_ranks, ["\n"], page_length=1500)))
         embeds = []
-
         counter = 1
-        for page in pagify(badge_ranks, ["\n"]):
+        for page in pagify(badge_ranks, ["\n"], page_length=1500):
+            em = discord.Embed(colour=user.colour)
             em.description = page
             em.set_author(name="Badges for {}".format(user.name), icon_url=user.avatar_url)
             em.set_footer(text="Page {} of {}".format(counter, total_pages))
             embeds.append(em)
             counter += 1
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        if len(embeds) == 1:
+            await ctx.send(embed=embeds[0])
+        else:
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @badge.command(name="buy")
     @commands.guild_only()
