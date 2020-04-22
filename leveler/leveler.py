@@ -1519,7 +1519,10 @@ class Leveler(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     async def listuserbadges(self, ctx, user: discord.Member = None):
-        """List the badges of a user."""
+        """
+        List all of a user's badges.
+        0 or -1 on the priority number means the badge is not visible on the profile.
+		"""
         if user is None:
             user = ctx.author
         server = ctx.guild
@@ -1532,8 +1535,7 @@ class Leveler(commands.Cog):
         for badgename in userinfo["badges"].keys():
             badge = userinfo["badges"][badgename]
             priority_num = badge["priority_num"]
-            if priority_num != -1:
-                priority_badges.append((badge, priority_num))
+            priority_badges.append((badge, priority_num))
         sorted_badges = sorted(priority_badges, key=operator.itemgetter(1), reverse=True)
 
         badge_ranks = ""
