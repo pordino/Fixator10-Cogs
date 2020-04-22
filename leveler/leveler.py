@@ -586,27 +586,28 @@ class Leveler(commands.Cog):
         rgb = tuple(rgb[:3])
         return "#%02x%02x%02x" % rgb
 
-    @commands.group(name="lvlset", pass_context=True)
+    @commands.group(name="lvlset")
+    @commands.guild_only()
     async def lvlset(self, ctx):
         """Profile configuration options."""
         pass
 
-    @lvlset.group(name="profile", pass_context=True)
+    @lvlset.group(name="profile")
     async def profileset(self, ctx):
         """Profile options."""
         pass
 
-    @lvlset.group(name="rank", pass_context=True)
+    @lvlset.group(name="rank")
     async def rankset(self, ctx):
         """Rank options."""
         pass
 
-    @lvlset.group(name="levelup", pass_context=True)
+    @lvlset.group(name="levelup")
     async def levelupset(self, ctx):
         """Level-up options."""
         pass
 
-    @profileset.command(name="color", pass_context=True, no_pm=True)
+    @profileset.command(name="color")
     async def profilecolors(self, ctx, section: str, color: str):
         """Set info color. e.g [p]lvlset profile color [exp|rep|badge|info|all] [default|white|hex|auto]"""
         user = ctx.author
@@ -1458,6 +1459,7 @@ class Leveler(commands.Cog):
             )
 
     @commands.group()
+    @commands.guild_only()
     async def badge(self, ctx):
         """Badge configuration options."""
         pass
@@ -2022,8 +2024,9 @@ class Leveler(commands.Cog):
         em.description = msg
         await ctx.send(embed=em)
 
-    @checks.mod_or_permissions(manage_roles=True)
     @commands.group()
+    @commands.guild_only()
+    @checks.mod_or_permissions(manage_roles=True)
     async def role(self, ctx):
         """Role configuration."""
         pass
