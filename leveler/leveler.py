@@ -2161,7 +2161,7 @@ class Leveler(commands.Cog):
     @lvladminbg.command()
     @commands.guild_only()
     async def addlevelbg(self, ctx, name: str, url: str):
-        """Add a level-up background. Proportions: (85px x 105px)"""
+        """Add a level-up background. Proportions: (175px x 65px)"""
         backgrounds = await self.get_backgrounds()
         if name in backgrounds["levelup"].keys():
             await ctx.send("**That level-up background name already exists!**")
