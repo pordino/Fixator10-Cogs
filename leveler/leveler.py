@@ -2578,7 +2578,7 @@ class Leveler(commands.Cog):
         profile_avatar = BytesIO()
         try:
             await user.avatar_url.save(profile_avatar, seek_begin=True)
-        except discord.errors.NotFound:
+        except (discord.NotFound, discord.HTTPException):
             blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
             async with self.session.get(blank_avatar_url) as r:
                 blank_avatar_image = await r.content.read()
@@ -3109,7 +3109,13 @@ class Leveler(commands.Cog):
                 server_icon = BytesIO(server_icon_image)
         else:
             server_icon = BytesIO()
-            await server_icon_url.save(server_icon, seek_begin=True)
+            try:
+                await server_icon_url.save(server_icon, seek_begin=True)
+            except (discord.NotFound, discord.HTTPException):
+                blank_avatar_url = "https://i.imgur.com/BDW180Y.png"
+                async with self.session.get(blank_avatar_url) as r:
+                    blank_avatar_image = await r.content.read()
+                    server_icon = BytesIO(blank_avatar_image)
 
         # rank bg image
         async with self.session.get(bg_url) as r:
@@ -3120,7 +3126,7 @@ class Leveler(commands.Cog):
         rank_avatar = BytesIO()
         try:
             await user.avatar_url.save(rank_avatar, seek_begin=True)
-        except discord.errors.NotFound:
+        except (discord.NotFound, discord.HTTPException):
             blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
             async with self.session.get(blank_avatar_url) as r:
                 blank_avatar_image = await r.content.read()
@@ -3384,7 +3390,13 @@ class Leveler(commands.Cog):
 
         level_background = BytesIO(image)
         level_avatar = BytesIO()
-        await user.avatar_url.save(level_avatar, seek_begin=True)
+        try:
+            await user.avatar_url.save(level_avatar, seek_begin=True)
+        except (discord.NotFound, discord.HTTPException):
+            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
+            async with self.session.get(blank_avatar_url) as r:
+                blank_avatar_image = await r.content.read()
+                level_avatar = BytesIO(blank_avatar_image)
 
         bg_image = Image.open(level_background).convert("RGBA")
         profile_image = Image.open(level_avatar).convert("RGBA")
