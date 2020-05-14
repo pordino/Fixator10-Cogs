@@ -34,7 +34,7 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 from redbot.core.utils.predicates import MessagePredicate
 
 
-log = logging.getLogger("red.cogs.Leveler")
+log = logging.getLogger("red.aikaterna.leveler")
 
 
 async def non_global_bank(ctx):
@@ -101,6 +101,7 @@ class Leveler(commands.Cog):
             self._db_ready = False
         self._disconnect_mongo()
         config = await self.config.custom("MONGODB").all()
+        log.debug(f"Leveler is connecting to a MongoDB server at: {config}")
         try:
             self.client = AsyncIOMotorClient(
                 **{k: v for k, v in config.items() if not k == "db_name"}
@@ -3483,10 +3484,16 @@ class Leveler(commands.Cog):
         self._message_tasks.append([user, server, message])  # Add to task list
 
     async def process_tasks(self):  # Run all tasks and resets task list
-        if not self._db_ready:
-            return
+        log.debug("_process_tasks is starting for batch xp writing")
+        log.debug(f"DB ready state: {self._db_ready}")
+        await self.bot.wait_until_red_ready()
         with contextlib.suppress(asyncio.CancelledError):
             while True:
+                if not self._db_ready:
+                    log.debug("_process_tasks has exited early because db is not ready")
+                    await asyncio.sleep(5)
+                    log.debug("_process_tasks is trying to connect again")
+                    continue
                 tasks = copy(self._message_tasks)
                 self._message_tasks = []
                 for a in tasks:
@@ -3505,6 +3512,7 @@ class Leveler(commands.Cog):
 
     async def _process_user_on_message(self, user, server, message):  # Process a users message
         if not self._db_ready:
+            log.debug("process_user_on_message has exited early because db is not ready")
             return
         text = message.content
         curr_time = time.time()
@@ -3531,14 +3539,18 @@ class Leveler(commands.Cog):
                 message.channel.id not in await self.config.guild(server).ignored_channels(),
             ]
         ):
+            log.debug(f"{user} {server}'s message qualifies for xp awarding")
             await asyncio.sleep(0)
             xp = await self.config.xp()
             await self._process_exp(message, userinfo, random.randint(xp[0], xp[1]))
             await asyncio.sleep(0)
             await self._give_chat_credit(user, server)
+        else:
+            log.debug(f"{user} {server}'s message DOES NOT qualify for xp awarding")
 
     async def _process_exp(self, message, userinfo, exp: int):
         if not self._db_ready:
+            log.debug("process_exp has exited early because db is not ready")
             return
         server = message.guild
         channel = message.channel
@@ -3586,9 +3598,11 @@ class Leveler(commands.Cog):
                     }
                 },
             )
+            log.debug("process_exp has written the exp")
 
     async def _handle_levelup(self, user, userinfo, server, channel):
         if not self._db_ready:
+            log.debug("_handle_levelup has exited early because db is not ready")
             return
         # channel lock implementation
         channel_id = await self.config.guild(server).lvl_msg_lock()
