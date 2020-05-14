@@ -2578,11 +2578,8 @@ class Leveler(commands.Cog):
         profile_avatar = BytesIO()
         try:
             await user.avatar_url.save(profile_avatar, seek_begin=True)
-        except (discord.NotFound, discord.HTTPException):
-            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
-            async with self.session.get(blank_avatar_url) as r:
-                blank_avatar_image = await r.content.read()
-                profile_avatar = BytesIO(blank_avatar_image)
+        except discord.HTTPException:
+            profile_avatar = f"{bundled_data_path(self)}/defaultavatar.png"
 
         bg_image = Image.open(profile_background).convert("RGBA")
         profile_image = Image.open(profile_avatar).convert("RGBA")
@@ -3103,19 +3100,13 @@ class Leveler(commands.Cog):
 
         # guild icon image
         if not server_icon_url._url:
-            server_icon_url = "https://i.imgur.com/BDW180Y.png"
-            async with self.session.get(server_icon_url) as r:
-                server_icon_image = await r.content.read()
-                server_icon = BytesIO(server_icon_image)
+            server_icon = f"{bundled_data_path(self)}/defaultguildicon.png"
         else:
             server_icon = BytesIO()
             try:
                 await server_icon_url.save(server_icon, seek_begin=True)
-            except (discord.NotFound, discord.HTTPException):
-                blank_avatar_url = "https://i.imgur.com/BDW180Y.png"
-                async with self.session.get(blank_avatar_url) as r:
-                    blank_avatar_image = await r.content.read()
-                    server_icon = BytesIO(blank_avatar_image)
+            except discord.HTTPException:
+                server_icon = f"{bundled_data_path(self)}/defaultguildicon.png"
 
         # rank bg image
         async with self.session.get(bg_url) as r:
@@ -3126,11 +3117,8 @@ class Leveler(commands.Cog):
         rank_avatar = BytesIO()
         try:
             await user.avatar_url.save(rank_avatar, seek_begin=True)
-        except (discord.NotFound, discord.HTTPException):
-            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
-            async with self.session.get(blank_avatar_url) as r:
-                blank_avatar_image = await r.content.read()
-                rank_avatar = BytesIO(blank_avatar_image)
+        except discord.HTTPException:
+            rank_avatar = f"{bundled_data_path(self)}/defaultavatar.png"
 
         # set all to RGBA
         bg_image = Image.open(rank_background).convert("RGBA")
@@ -3392,11 +3380,8 @@ class Leveler(commands.Cog):
         level_avatar = BytesIO()
         try:
             await user.avatar_url.save(level_avatar, seek_begin=True)
-        except (discord.NotFound, discord.HTTPException):
-            blank_avatar_url = "https://i.imgur.com/8Pi7FBH.png"
-            async with self.session.get(blank_avatar_url) as r:
-                blank_avatar_image = await r.content.read()
-                level_avatar = BytesIO(blank_avatar_image)
+        except discord.HTTPException:
+            level_avatar = f"{bundled_data_path(self)}/defaultavatar.png"
 
         bg_image = Image.open(level_background).convert("RGBA")
         profile_image = Image.open(level_avatar).convert("RGBA")
