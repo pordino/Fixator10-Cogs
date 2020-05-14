@@ -1464,6 +1464,36 @@ class Leveler(commands.Cog):
     @checks.is_owner()
     @lvladmin.command()
     @commands.guild_only()
+    async def setrep(self, ctx, user: discord.Member, rep_level: int):
+        """Set a user's rep level. (What a cheater C:)."""
+        server = user.guild
+        channel = ctx.channel
+
+        if rep_level < 0:
+            await ctx.send("**Please enter a positive number.**")
+            return
+        if rep_level > 99999:
+            await ctx.send("**Please use a number that is smaller than 100,000.**")
+            return
+
+        # creates user if doesn't exist
+        await self._create_user(user, server)
+
+        if await self.config.guild(ctx.guild).disabled():
+            await ctx.send("Leveler commands for this server are disabled.")
+            return
+
+        await self.db.users.update_one(
+            {"user_id": str(user.id)}, {"$set": {"rep": rep_level}}
+        )
+
+        await ctx.send(
+            "**{}'s rep has been set to `{}`.**".format(await self._is_mention(user), rep_level)
+        )
+
+    @checks.is_owner()
+    @lvladmin.command()
+    @commands.guild_only()
     async def xpban(self, ctx, days: int, *, user: Union[discord.Member, int, None]):
         """Ban user from getting experience"""
         if isinstance(user, int):
