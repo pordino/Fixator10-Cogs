@@ -1432,6 +1432,10 @@ class Leveler(commands.Cog):
             await ctx.send("**Please enter a positive number.**")
             return
 
+        if level > 10000:
+            await ctx.send("**Please enter a number that is less than 10,000.**")
+            return
+
         # get rid of old level exp
         old_server_exp = 0
         for i in range(userinfo["servers"][str(server.id)]["level"]):
