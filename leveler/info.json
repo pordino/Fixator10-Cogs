@@ -16,6 +16,7 @@
     "fonttools",
     "pillow",
     "numpy",
-    "scipy"
+    "scipy",
+    "tabulate"
   ]
 }
