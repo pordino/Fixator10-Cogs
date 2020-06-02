@@ -3639,9 +3639,13 @@ class Leveler(commands.Cog):
             log.debug("_handle_levelup has exited early because db is not ready")
             return
         # channel lock implementation
-        channel_id = await self.config.guild(server).lvl_msg_lock()
-        if channel_id:
-            channel = find(lambda m: m.id == channel_id, server.channels)
+        lock_channel_id = await self.config.guild(server).lvl_msg_lock()
+        if lock_channel_id:
+            lock_channel = self.bot.get_channel(lock_channel_id)
+            if not lock_channel:
+               await self.config.guild(server).lvl_msg_lock.set(None)
+            else:
+               channel = lock_channel
 
         server_identifier = ""  # super hacky
         name = await self._is_mention(user)  # also super hacky
