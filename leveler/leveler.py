@@ -3716,7 +3716,7 @@ class Leveler(commands.Cog):
 
         if await self.config.guild(server).lvl_msg():  # if lvl msg is enabled
             if await self.config.guild(server).text_only():
-                if channel.permissions_for(server.me).send_messages == True:
+                if all([channel.permissions_for(server.me).send_messages, channel.permissions_for(server.me).embed_links]):
                     async with channel.typing():
                         em = discord.Embed(
                             description="**{} just gained a level{}! (LEVEL {})**".format(
@@ -3726,7 +3726,7 @@ class Leveler(commands.Cog):
                         )
                         await channel.send(embed=em)
             else:
-                if channel.permissions_for(server.me).send_messages == True:
+                if all([channel.permissions_for(server.me).send_messages, channel.permissions_for(server.me).attach_files]):
                     async with channel.typing():
                         await self.draw_levelup(user, server)
                         file = discord.File(
