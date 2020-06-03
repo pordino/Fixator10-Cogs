@@ -3716,23 +3716,25 @@ class Leveler(commands.Cog):
 
         if await self.config.guild(server).lvl_msg():  # if lvl msg is enabled
             if await self.config.guild(server).text_only():
-                async with channel.typing():
-                    em = discord.Embed(
-                        description="**{} just gained a level{}! (LEVEL {})**".format(
-                            name, server_identifier, new_level
-                        ),
-                        colour=user.colour,
-                    )
-                    await channel.send(embed=em)
+                if channel.permissions_for(server.me).send_messages == True:
+                    async with channel.typing():
+                        em = discord.Embed(
+                            description="**{} just gained a level{}! (LEVEL {})**".format(
+                                name, server_identifier, new_level
+                            ),
+                            colour=user.colour,
+                        )
+                        await channel.send(embed=em)
             else:
-                async with channel.typing():
-                    await self.draw_levelup(user, server)
-                    file = discord.File(
-                        f"{cog_data_path(self)}/{user.id}_level.png", filename="levelup.png"
-                    )
-                    await channel.send(
-                        "**{} just gained a level{}!**".format(name, server_identifier), file=file,
-                    )
+                if channel.permissions_for(server.me).send_messages == True:
+                    async with channel.typing():
+                        await self.draw_levelup(user, server)
+                        file = discord.File(
+                            f"{cog_data_path(self)}/{user.id}_level.png", filename="levelup.png"
+                        )
+                        await channel.send(
+                            "**{} just gained a level{}!**".format(name, server_identifier), file=file,
+                        )
 
     async def _find_server_rank(self, user, server):
         if not self._db_ready:
