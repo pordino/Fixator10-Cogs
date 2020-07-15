@@ -232,16 +232,11 @@ class Leveler(commands.Cog):
             await channel.send(embed=em)
         else:
             async with ctx.channel.typing():
-                await self.draw_profile(user, server)
-                file = discord.File(f"{cog_data_path(self)}/{user.id}_profile.png", filename="profile.png")
+                file = await self.draw_profile(user, server)
                 await channel.send("**User profile for {}**".format(await self._is_mention(user)), file=file)
             await self.db.users.update_one(
                 {"user_id": str(user.id)}, {"$set": {"profile_block": curr_time}}, upsert=True
             )
-            try:
-                os.remove(f"{cog_data_path(self)}/{user.id}_profile.png")
-            except:
-                pass
 
     async def profile_text(self, user, server, userinfo):
         def test_empty(text):
@@ -295,16 +290,11 @@ class Leveler(commands.Cog):
             await channel.send("", embed=em)
         else:
             async with ctx.typing():
-                await self.draw_rank(user, server)
-                file = discord.File(f"{cog_data_path(self)}/{user.id}_rank.png", filename="rank.png")
+                file = await self.draw_rank(user, server)
                 await ctx.send(f"**Ranking & Statistics for {await self._is_mention(user)}**", file=file)
             await self.db.users.update_one(
                 {"user_id": str(user.id)}, {"$set": {"rank_block".format(server.id): curr_time}}, upsert=True,
             )
-            try:
-                os.remove(f"{cog_data_path(self)}/{user.id}_rank.png")
-            except:
-                pass
 
     async def rank_text(self, user, server, userinfo):
         em = discord.Embed(colour=user.colour)
@@ -2752,10 +2742,7 @@ class Leveler(commands.Cog):
                     if await self._valid_image_url(bg_color):
                         # get image
                         async with self.session.get(bg_color) as r:
-                            image = await r.content.read()
-                        with open(f"{cog_data_path(self)}/{user.id}_temp_badge.png", "wb") as f:
-                            f.write(image)
-                        badge_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_badge.png").convert("RGBA")
+                            badge_image = Image.open(await r.read()).convert("RGBA")
                         badge_image = badge_image.resize((raw_length, raw_length), Image.ANTIALIAS)
 
                         # structured like this because if border = 0, still leaves outline.
@@ -2782,11 +2769,6 @@ class Leveler(commands.Cog):
                             process.paste(output, coord, outer_mask)
                 except:
                     pass
-                # attempt to remove badge image
-                try:
-                    os.remove(f"{cog_data_path(self)}/{user.id}_temp_badge.png")
-                except:
-                    pass
                 i += 1
         elif await self.config.badge_type() == "bars":
             vert_pos = 187
@@ -2804,10 +2786,7 @@ class Leveler(commands.Cog):
                 # determine image or color for badge bg
                 if await self._valid_image_url(bg_color):
                     async with self.session.get(bg_color) as r:
-                        image = await r.content.read()
-                    with open(f"{cog_data_path(self)}/{user.id}_temp_badge.png", "wb") as f:
-                        f.write(image)
-                    badge_image = Image.open(f"{cog_data_path(self)}/{user.id}_temp_badge.png").convert("RGBA")
+                        badge_image = Image.open(await r.read()).convert("RGBA")
 
                     if border_color is not None:
                         draw.rectangle(
@@ -2824,26 +2803,18 @@ class Leveler(commands.Cog):
                     else:
                         badge_image = badge_image.resize(bar_size, Image.ANTIALIAS)
                         process.paste(badge_image, (left_pos, vert_pos + i * 17))
-                    try:
-                        os.remove(f"{cog_data_path(self)}/{user.id}_temp_badge.png")
-                    except:
-                        pass
 
                 vert_pos += 3  # spacing
                 i += 1
 
+        image_object = BytesIO()
         result = Image.alpha_composite(result, process)
-        result.save(f"{cog_data_path(self)}/{user.id}_profile.png", "PNG", quality=100)
-
-        # remove images
-        try:
-            os.remove(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png")
-        except:
-            pass
-        try:
-            os.remove(f"{cog_data_path(self)}/{user.id}_temp_profile_bg.png")
-        except:
-            pass
+        result.save(image_object, format="PNG")
+        image_object.seek(0)
+        return discord.File(
+            image_object,
+            f"profile_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
+        )
 
     # returns color that contrasts better in background
     def _contrast(self, bg_color, color1, color2):
@@ -3139,8 +3110,14 @@ class Leveler(commands.Cog):
             (right_text_align, 78), self._truncate_text(credit_txt, 12), font=general_info_fnt, fill=label_text_color,
         )  # Credits
 
+        image_object = BytesIO()
         result = Image.alpha_composite(result, process)
-        result.save(f"{cog_data_path(self)}/{user.id}_rank.png", "PNG", quality=100)
+        result.save(image_object, format="PNG")
+        image_object.seek(0)
+        return discord.File(
+            image_object,
+            f"rank_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
+        )
 
     @staticmethod
     def _add_corners(im, rad, multiplier=6):
@@ -3262,9 +3239,14 @@ class Leveler(commands.Cog):
             (self._center(50, 170, lvl_text, level_fnt), 22), lvl_text, font=level_fnt, fill=level_up_text,
         )  # Level Number
 
+        image_object = BytesIO()
         result = Image.alpha_composite(result, process)
-        filename = f"{cog_data_path(self)}/{user.id}_level.png"
-        result.save(filename, "PNG", quality=100)
+        result.save(image_object, format="PNG")
+        image_object.seek(0)
+        return discord.File(
+            image_object,
+            f"levelup_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
+        )
 
     @commands.Cog.listener("on_message_without_command")
     async def _handle_on_message(self, message):
@@ -3475,8 +3457,7 @@ class Leveler(commands.Cog):
                     [channel.permissions_for(server.me).send_messages, channel.permissions_for(server.me).attach_files,]
                 ):
                     async with channel.typing():
-                        await self.draw_levelup(user, server)
-                        file = discord.File(f"{cog_data_path(self)}/{user.id}_level.png", filename="levelup.png")
+                        file = await self.draw_levelup(user, server)
                         await channel.send(
                             "**{} just gained a level{}!**".format(name, server_identifier), file=file,
                         )
