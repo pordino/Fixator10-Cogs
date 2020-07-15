@@ -2742,7 +2742,7 @@ class Leveler(commands.Cog):
                     if await self._valid_image_url(bg_color):
                         # get image
                         async with self.session.get(bg_color) as r:
-                            badge_image = Image.open(await r.read()).convert("RGBA")
+                            badge_image = Image.open(BytesIO(await r.read())).convert("RGBA")
                         badge_image = badge_image.resize((raw_length, raw_length), Image.ANTIALIAS)
 
                         # structured like this because if border = 0, still leaves outline.
@@ -2786,7 +2786,7 @@ class Leveler(commands.Cog):
                 # determine image or color for badge bg
                 if await self._valid_image_url(bg_color):
                     async with self.session.get(bg_color) as r:
-                        badge_image = Image.open(await r.read()).convert("RGBA")
+                        badge_image = Image.open(BytesIO(await r.read())).convert("RGBA")
 
                     if border_color is not None:
                         draw.rectangle(
