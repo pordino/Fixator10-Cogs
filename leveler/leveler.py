@@ -1458,14 +1458,13 @@ class Leveler(commands.Cog):
     async def _valid_image_url(self, url):
         try:
             async with self.session.get(url) as r:
-                image = await r.content.read()
-            with open(f"{cog_data_path(self)}/test.png", "wb") as f:
-                f.write(image)
-            Image.open(f"{cog_data_path(self)}/test.png").convert("RGBA")
-            os.remove(f"{cog_data_path(self)}/test.png")
-            return True
-        except:
-            return False
+                image = await r.read()
+            return Image.open(BytesIO(image)).convert("RGBA")
+        except Exception as exc:
+            log.exception(
+                "Something went wrong while trying to get a badge image or convert it: ", exc_info=exc,
+            )
+            return None
 
     @checks.admin_or_permissions(manage_guild=True)
     @lvladmin.command()
@@ -2738,35 +2737,35 @@ class Leveler(commands.Cog):
                     draw_thumb = ImageDraw.Draw(mask)
                     draw_thumb.ellipse((0, 0) + (raw_length, raw_length), fill=255, outline=0)
 
-                    # determine image or color for badge bg
-                    if await self._valid_image_url(bg_color):
-                        # get image
-                        async with self.session.get(bg_color) as r:
-                            badge_image = Image.open(BytesIO(await r.read())).convert("RGBA")
-                        badge_image = badge_image.resize((raw_length, raw_length), Image.ANTIALIAS)
+                    # check image
+                    badge_image = await self._valid_image_url(bg_color)
+                    if not badge_image:
+                        continue
 
-                        # structured like this because if border = 0, still leaves outline.
-                        if border_color:
-                            square = Image.new("RGBA", (raw_length, raw_length), border_color)
-                            # put border on ellipse/circle
-                            output = ImageOps.fit(square, (raw_length, raw_length), centering=(0.5, 0.5))
-                            output = output.resize((size, size), Image.ANTIALIAS)
-                            outer_mask = mask.resize((size, size), Image.ANTIALIAS)
-                            process.paste(output, coord, outer_mask)
+                    badge_image = badge_image.resize((raw_length, raw_length), Image.ANTIALIAS)
 
-                            # put on ellipse/circle
-                            output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
-                            output = output.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
-                            inner_mask = mask.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
-                            process.paste(
-                                output, (coord[0] + border_width, coord[1] + border_width), inner_mask,
-                            )
-                        else:
-                            # put on ellipse/circle
-                            output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
-                            output = output.resize((size, size), Image.ANTIALIAS)
-                            outer_mask = mask.resize((size, size), Image.ANTIALIAS)
-                            process.paste(output, coord, outer_mask)
+                    # structured like this because if border = 0, still leaves outline.
+                    if border_color:
+                        square = Image.new("RGBA", (raw_length, raw_length), border_color)
+                        # put border on ellipse/circle
+                        output = ImageOps.fit(square, (raw_length, raw_length), centering=(0.5, 0.5))
+                        output = output.resize((size, size), Image.ANTIALIAS)
+                        outer_mask = mask.resize((size, size), Image.ANTIALIAS)
+                        process.paste(output, coord, outer_mask)
+
+                        # put on ellipse/circle
+                        output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
+                        output = output.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
+                        inner_mask = mask.resize((size - total_gap, size - total_gap), Image.ANTIALIAS)
+                        process.paste(
+                            output, (coord[0] + border_width, coord[1] + border_width), inner_mask,
+                        )
+                    else:
+                        # put on ellipse/circle
+                        output = ImageOps.fit(badge_image, (raw_length, raw_length), centering=(0.5, 0.5))
+                        output = output.resize((size, size), Image.ANTIALIAS)
+                        outer_mask = mask.resize((size, size), Image.ANTIALIAS)
+                        process.paste(output, coord, outer_mask)
                 except:
                     pass
                 i += 1
@@ -2783,26 +2782,26 @@ class Leveler(commands.Cog):
                 border_width = int(total_gap / 2)
                 bar_size = (85, 15)
 
-                # determine image or color for badge bg
-                if await self._valid_image_url(bg_color):
-                    async with self.session.get(bg_color) as r:
-                        badge_image = Image.open(BytesIO(await r.read())).convert("RGBA")
+                # check image
+                badge_image = await self._valid_image_url(bg_color)
+                if not badge_image:
+                    continue
 
-                    if border_color is not None:
-                        draw.rectangle(
-                            [(left_pos, vert_pos + i * 17), (right_pos, vert_pos + 15 + i * 17)],
-                            fill=border_color,
-                            outline=border_color,
-                        )  # border
-                        badge_image = badge_image.resize(
-                            (bar_size[0] - total_gap + 1, bar_size[1] - total_gap + 1), Image.ANTIALIAS,
-                        )
-                        process.paste(
-                            badge_image, (left_pos + border_width, vert_pos + border_width + i * 17),
-                        )
-                    else:
-                        badge_image = badge_image.resize(bar_size, Image.ANTIALIAS)
-                        process.paste(badge_image, (left_pos, vert_pos + i * 17))
+                if border_color is not None:
+                    draw.rectangle(
+                        [(left_pos, vert_pos + i * 17), (right_pos, vert_pos + 15 + i * 17)],
+                        fill=border_color,
+                        outline=border_color,
+                    )  # border
+                    badge_image = badge_image.resize(
+                        (bar_size[0] - total_gap + 1, bar_size[1] - total_gap + 1), Image.ANTIALIAS,
+                    )
+                    process.paste(
+                        badge_image, (left_pos + border_width, vert_pos + border_width + i * 17),
+                    )
+                else:
+                    badge_image = badge_image.resize(bar_size, Image.ANTIALIAS)
+                    process.paste(badge_image, (left_pos, vert_pos + i * 17))
 
                 vert_pos += 3  # spacing
                 i += 1
@@ -2811,10 +2810,7 @@ class Leveler(commands.Cog):
         result = Image.alpha_composite(result, process)
         result.save(image_object, format="PNG")
         image_object.seek(0)
-        return discord.File(
-            image_object,
-            f"profile_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
-        )
+        return discord.File(image_object, f"profile_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png")
 
     # returns color that contrasts better in background
     def _contrast(self, bg_color, color1, color2):
@@ -3114,10 +3110,7 @@ class Leveler(commands.Cog):
         result = Image.alpha_composite(result, process)
         result.save(image_object, format="PNG")
         image_object.seek(0)
-        return discord.File(
-            image_object,
-            f"rank_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
-        )
+        return discord.File(image_object, f"rank_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png")
 
     @staticmethod
     def _add_corners(im, rad, multiplier=6):
@@ -3243,10 +3236,7 @@ class Leveler(commands.Cog):
         result = Image.alpha_composite(result, process)
         result.save(image_object, format="PNG")
         image_object.seek(0)
-        return discord.File(
-            image_object,
-            f"levelup_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png"
-        )
+        return discord.File(image_object, f"levelup_{user.id}_{server.id}_{int(datetime.now().timestamp())}.png")
 
     @commands.Cog.listener("on_message_without_command")
     async def _handle_on_message(self, message):
