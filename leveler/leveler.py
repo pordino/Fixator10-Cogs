@@ -3657,7 +3657,14 @@ class Leveler(commands.Cog):
         return False
 
     @checks.is_owner()
-    @lvladmin.command()
+    @lvladmin.group()
+    @commands.guild_only()
+    async def convert(self, ctx):
+        """Conversion commands."""
+        pass
+
+    @checks.is_owner()
+    @convert.command(name="mee6levels")
     @commands.guild_only()
     async def mee6convertlevels(self, ctx, pages: int):
         """Convert Mee6 levels.
@@ -3735,7 +3742,7 @@ class Leveler(commands.Cog):
         await ctx.send(f"{failed} users could not be found and were skipped.")
 
     @checks.is_owner()
-    @lvladmin.command()
+    @convert.command(name="mee6ranks")
     @commands.guild_only()
     async def mee6convertranks(self, ctx):
         """Convert Mee6 role rewards.
@@ -3774,3 +3781,86 @@ class Leveler(commands.Cog):
                     )
 
                 await ctx.send("**The `{}` role has been linked to level `{}`**".format(role_name, level))
+
+    @checks.is_owner()
+    @convert.command(name="tatsulevels")
+    @commands.guild_only()
+    async def tatsumakiconvertlevels(self, ctx):
+        """Convert Tatsumaki levels.
+        This command must be run in a channel in the guild to be converted."""
+        token = await self.bot.get_shared_api_tokens("tatsumaki")
+        tatsu_token = token.get("api_key", False)
+        if not tatsu_token:
+            return await ctx.send(f"You do not have a valid Tatsumaki API set up. You can retreive one via the Tastu bot and set it via `{ctx.clean_prefix}set api tatsumaki api_key <api_key_here>`")
+
+        if await self.config.guild(ctx.guild).mentions():
+            msg = (
+                "**{}, levelup mentions are on in this server.**\n"
+                "The bot will ping every user that will be leveled up through this process if you continue.\n"
+                "Reply with `yes` if you want this conversion to continue.\n"
+                "If not, reply with `no` and then run `{}lvladmin mention` to turn off mentions before running this command again."
+            ).format(ctx.author.display_name, ctx.prefix)
+            await ctx.send(msg)
+            pred = MessagePredicate.yes_or_no(ctx)
+            try:
+                await self.bot.wait_for("message", check=pred, timeout=15)
+            except TimeoutError:
+                return await ctx.send("**Timed out waiting for a response.**")
+            if pred.result is False:
+                return await ctx.send("**Command cancelled.**")
+        failed = 0
+        await asyncio.sleep(0)
+        async with self.session.get(
+            f"https://api.tatsumaki.xyz/guilds/{ctx.guild.id}/leaderboard?limit&=-1"
+        ) as r:
+
+            if r.status == 200:
+                data = await r.json()
+            else:
+                return await ctx.send("No data was found within the Tastumaki API.")
+
+        for userdata in data:
+            if userdata is None:
+                continue
+            await asyncio.sleep(0)
+            # _handle_levelup requires a Member
+            user = ctx.guild.get_member(int(userdata["user_id"]))
+
+            if not user:
+                failed += 1
+                continue
+
+            level = self._find_level(userdata["score"])
+            server = ctx.guild
+            channel = ctx.channel
+
+            # creates user if doesn't exist
+            await self._create_user(user, server)
+            userinfo = await self.db.users.find_one({"user_id": str(user.id)})
+
+            # get rid of old level exp
+            old_server_exp = 0
+            for _i in range(userinfo["servers"][str(server.id)]["level"]):
+                await asyncio.sleep(0)
+                old_server_exp += self._required_exp(_i)
+            userinfo["total_exp"] -= old_server_exp
+            userinfo["total_exp"] -= userinfo["servers"][str(server.id)]["current_exp"]
+
+            # add in new exp
+            total_exp = self._level_exp(level)
+            userinfo["servers"][str(server.id)]["current_exp"] = 0
+            userinfo["servers"][str(server.id)]["level"] = level
+            userinfo["total_exp"] += total_exp
+
+            await self.db.users.update_one(
+                {"user_id": str(user.id)},
+                {
+                    "$set": {
+                        "servers.{}.level".format(server.id): level,
+                        "servers.{}.current_exp".format(server.id): 0,
+                        "total_exp": userinfo["total_exp"],
+                    }
+                },
+            )
+            await self._handle_levelup(user, userinfo, server, channel)
+        await ctx.send(f"{failed} users could not be found and were skipped.")
