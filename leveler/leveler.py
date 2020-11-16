@@ -3873,7 +3873,9 @@ class Leveler(commands.Cog):
         token = await self.bot.get_shared_api_tokens("tatsumaki")
         tatsu_token = token.get("api_key", False)
         if not tatsu_token:
-            return await ctx.send(f"You do not have a valid Tatsumaki API set up. You can retreive one via the Tastu bot and set it via `{ctx.clean_prefix}set api tatsumaki api_key <api_key_here>`")
+            return await ctx.send(f"You do not have a valid Tatsumaki API key set up. "
+                                  f"If you have a key, you can set it via `{ctx.clean_prefix}set api tatsumaki api_key <api_key_here>`\n"
+                                  f"Keys are not currently available if you do not have one already as the API is in the process of being revamped.")
 
         if await self.config.guild(ctx.guild).mentions():
             msg = (
