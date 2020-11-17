@@ -1235,52 +1235,48 @@ class Leveler(commands.Cog):
         """Admin settings."""
         pass
 
-    @checks.admin_or_permissions(manage_guild=True)
+    @checks.mod_or_permissions(manage_messages=True)
     @commands.bot_has_permissions(embed_links=True)
     @lvladmin.group(invoke_without_command=True)
-    async def overview(self, ctx):
+    async def overview(self, ctx, guild_id: int = None):
         """A list of settings."""
-        # user = ctx.author
-        disabled_servers = []
-        private_levels = []
-        disabled_levels = []
-        locked_channels = []
-
-        for guild in self.bot.guilds:
-            await asyncio.sleep(0)
-            if await self.config.guild(guild).disabled():
-                disabled_servers.append(guild.name)
-            if await self.config.guild(guild).lvl_msg_lock():
-                locked_channels.append(
-                    "\n{} → #{}".format(guild.name, guild.get_channel(await self.config.guild(guild).lvl_msg_lock()),)
-                )
-            if await self.config.guild(guild).lvl_msg():
-                disabled_levels.append(guild.name)
-            if await self.config.guild(guild).private_lvl_message():
-                private_levels.append(guild.name)
-
         num_users = await self.db.users.count_documents({})
-
         default_profile = await self.config.default_profile()
         default_rank = await self.config.default_rank()
         default_levelup = await self.config.default_levelup()
 
-        msg = ""
-        msg += "**Servers:** {}\n".format(len(self.bot.guilds))
-        msg += "**Unique Users:** {}\n".format(num_users)
-        msg += "**Mentions on in {}:** {}\n".format(ctx.guild.name, await self.config.guild(ctx.guild).mentions())
+        if guild_id is not None:
+            if ctx.author.id in self.bot.owner_ids:
+                guild_data = await self.config.guild_from_id(guild_id).all()   
+                g = self.bot.get_guild(guild_id)
+            else:
+                guild_data = await self.config.guild(ctx.guild).all()
+                g = ctx.guild
+        else:
+            guild_data = await self.config.guild(ctx.guild).all()
+            g = ctx.guild
+
+        msg = "`Guild Settings`\n"
+        msg += "**Leveler on {}:** {}\n".format(ctx.guild.name if not g else g.name, "Disabled" if guild_data['disabled'] else "Enabled")
+        msg += "**Mentions on {}:** {}\n".format(ctx.guild.name if not g else g.name, "Enabled" if guild_data['mentions'] else "Disabled")
+        msg += "**Public Level Messages:** {}\n".format("Enabled" if guild_data['lvl_msg'] else "Disabled")
+        msg += "**Private Level Messages:** {}\n".format("Enabled" if guild_data['private_lvl_message'] else "Disabled")
+        msg += "**Channel Locks:** {}\n".format(ctx.guild.get_channel(guild_data['lvl_msg_lock']))
+ 
+        msg += "\n`Bot Owner Only Settings`\n"
         msg += "**Background Price:** {}\n".format(await self.config.bg_price())
         msg += "**Rep Reset Price:** {}\n".format(await self.config.rep_price())
-        msg += "**Badge type:** {}\n".format(await self.config.badge_type())
-        msg += "**Disabled Servers:** {}\n".format(", ".join(disabled_servers))
-        msg += "**Enabled Level Messages:** {}\n".format(", ".join(disabled_levels))
-        msg += "**Private Level Messages:** {}\n".format(", ".join(private_levels))
-        msg += "**Channel Locks:** {}\n".format(", ".join(locked_channels))
+        msg += "**Badge Type:** {}\n".format(await self.config.badge_type())
         msg += "**Default Profile Background:** {}\n".format(default_profile)
         msg += "**Default Rank Background:** {}\n".format(default_rank)
         msg += "**Default Levelup Background:** {}\n".format(default_levelup)
+
+        if ctx.author.id in self.bot.owner_ids:
+            msg += "\n**Servers:** {}\n".format(len(self.bot.guilds))
+            msg += "**Unique Users:** {}\n".format(num_users)
+
         em = discord.Embed(description=msg, colour=await ctx.embed_color())
-        em.set_author(name="Settings Overview for {}".format(self.bot.user.name))
+        em.set_author(name="Settings Overview for {}".format(g.name))
         await ctx.send(embed=em)
 
     @lvladmin.command()
