@@ -1819,7 +1819,8 @@ class Leveler(commands.Cog):
             `0`  Free.
                  Otherwise it will be the number provided for price.
         `description`: A description for the badge. 
-        `global_badge`: Use `-global` in this slot to make the badge global, if you are the bot owner.
+
+        Use `-global` after your description to make the badge global, if you are the bot owner.
         """
 
         user = ctx.author
