@@ -1972,7 +1972,7 @@ class Leveler(commands.Cog):
             await ctx.send("**That badge does not exist.**")
 
     @checks.mod_or_permissions(manage_roles=True)
-    @badge.command()
+    @badge.command(name="give")
     @commands.guild_only()
     async def badge_give(self, ctx, user: discord.Member, name: str, global_badge: str = None):
         """
@@ -2022,7 +2022,7 @@ class Leveler(commands.Cog):
                 await ctx.send("**That badge doesn't exist in this server!**")
 
     @checks.mod_or_permissions(manage_roles=True)
-    @badge.command()
+    @badge.command(name="take")
     @commands.guild_only()
     async def badge_take(self, ctx, user: discord.Member, name: str):
         """Take a user's badge."""
