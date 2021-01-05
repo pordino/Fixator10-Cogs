@@ -3369,7 +3369,7 @@ class Leveler(commands.Cog):
             [
                 float(curr_time) - float(userinfo["chat_block"]) >= 120,
                 not any(text.startswith(x) for x in prefix),
-                len(message.content) > 10,
+                len(message.content) > 4,
                 message.content != userinfo["last_message"],
                 message.channel.id not in await self.config.guild(server).ignored_channels(),
             ]
