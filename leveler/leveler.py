@@ -1208,21 +1208,26 @@ class Leveler(commands.Cog):
 
     @profileset.command()
     @commands.guild_only()
-    async def title(self, ctx, *, title):
+    async def title(self, ctx, *, title=None):
         """Set your title."""
         user = ctx.author
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = await self.db.users.find_one({"user_id": str(user.id)})
         max_char = 20
 
         if await self.config.guild(ctx.guild).disabled():
             await ctx.send("**Leveler commands for this server are disabled.**")
             return
 
+        if title is None:
+            await self.db.users.update_one({"user_id": str(user.id)}, {"$set": {"title": ""}})
+            msg = "**Your title has been successfully cleared!**\n"
+            msg += "Use this command with a title if you'd like to set one."
+            await ctx.send(msg)
+            return
+
         if len(title) < max_char:
-            userinfo["title"] = title
             await self.db.users.update_one({"user_id": str(user.id)}, {"$set": {"title": title}})
             await ctx.send("**Your title has been successfully set!**")
         else:
