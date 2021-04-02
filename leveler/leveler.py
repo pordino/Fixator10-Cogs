@@ -1208,21 +1208,26 @@ class Leveler(commands.Cog):
 
     @profileset.command()
     @commands.guild_only()
-    async def title(self, ctx, *, title):
+    async def title(self, ctx, *, title=None):
         """Set your title."""
         user = ctx.author
         server = ctx.guild
         # creates user if doesn't exist
         await self._create_user(user, server)
-        userinfo = await self.db.users.find_one({"user_id": str(user.id)})
         max_char = 20
 
         if await self.config.guild(ctx.guild).disabled():
             await ctx.send("**Leveler commands for this server are disabled.**")
             return
 
+        if title is None:
+            await self.db.users.update_one({"user_id": str(user.id)}, {"$set": {"title": ""}})
+            msg = "**Your title has been successfully cleared!**\n"
+            msg += "Use this command with a title if you'd like to set one."
+            await ctx.send(msg)
+            return
+
         if len(title) < max_char:
-            userinfo["title"] = title
             await self.db.users.update_one({"user_id": str(user.id)}, {"$set": {"title": title}})
             await ctx.send("**Your title has been successfully set!**")
         else:
@@ -3377,21 +3382,29 @@ class Leveler(commands.Cog):
             log.debug(f"{user} {server}'s message qualifies for xp awarding")
             await asyncio.sleep(0)
             xp = await self.config.xp()
-            await self._process_exp(message, userinfo, random.randint(xp[0], xp[1]))
+            await self._process_exp(message, server, userinfo, random.randint(xp[0], xp[1]))
             await asyncio.sleep(0)
             await self._give_chat_credit(user, server)
         else:
             log.debug(f"{user} {server}'s message DOES NOT qualify for xp awarding")
 
-    async def _process_exp(self, message, userinfo, exp: int):
+    async def _process_exp(self, message, server, userinfo, exp: int):
         if not self._db_ready:
             log.debug("process_exp has exited early because db is not ready")
             return
-        server = message.guild
+        server = message.guild if not None else server
+        if not server:
+            log.warning("Leveler is in _process_exp: server and message.guild are both None, skipping")
+            return
+        if not message.guild:
+            log.warning(f"Leveler is in _process_exp and message.guild is None, trying {server}")
         channel = message.channel
         user = message.author
         # add to total exp
-        required = self._required_exp(userinfo["servers"][str(server.id)]["level"])
+        try:
+            required = self._required_exp(userinfo["servers"][str(server.id)]["level"])
+        except Exception as e:
+            log.warning(f"Error while determining XP for {user} in {server}\n", exc_info=e)
         try:
             await self.db.users.update_one(
                 {"user_id": str(user.id)}, {"$set": {"total_exp": userinfo["total_exp"] + exp}}
